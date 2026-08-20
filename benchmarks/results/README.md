@@ -16,12 +16,12 @@ for the full provenance + environment).
 | `v8_ablation.json` | fuse4/split4 backend ablation at canvas H=W=4096 (CUDA/Triton/PyTorch eager µs) | `baseline/test_baseline_v8_bigbuf_ablation.py` | `python -m baseline.test_baseline_v8_bigbuf_ablation --out-json benchmarks/results/v8_ablation.json` |
 | `hierarchical.json` | flat vs hierarchical fuse/split at N∈{4,16,64,256} (ms) | `baseline/test_baseline_v8_hierarchical_pipeline.py` | `python -m baseline.test_baseline_v8_hierarchical_pipeline --out-json benchmarks/results/hierarchical.json` |
 | `p01_equivalence.json` | P0.1 24-loop vs combined-kernel A/B: fp32 max_abs_diff ≤ 3.7e-9, fp64 ~1e-18, ulp-perturbation sanity | `baseline/verify_p01_equivalence.py` | `CUDA_VISIBLE_DEVICES=<any> python -m baseline.verify_p01_equivalence --out-json benchmarks/results/p01_equivalence.json` |
-| `nsys_reports/` | derived `nsys stats` reports (kern_sum / mem_time_sum / api_sum per trace) | `nsys stats` on committed `outputs/nsys_traces/*.nsys-rep` | see `nsys_reports/README.md` |
+| `nsys_reports/` | derived `nsys stats` reports (kern_sum / mem_time_sum / api_sum per trace) | `nsys stats` on a (re-)captured `.nsys-rep` — binary traces not distributed | see `nsys_reports/README.md` |
 
-The nsys traces themselves (`outputs/nsys_traces/*.nsys-rep`, ~11-20 MB each)
-**are committed**; only the derived `.sqlite` stats are gitignored (rebuilt from
-the `.nsys-rep` by `nsys stats`). Regeneration commands in
-`docs/verifiable_results.md` §4.
+Binary nsys traces (`outputs/nsys_traces/*.nsys-rep`, ~11-20 MB each) are
+**not distributed** in this repo; the committed artifact is the derived reports
+in `nsys_reports/`. Re-capture a trace with the profiling command in
+`docs/verifiable_results.md` §4, then `nsys stats` regenerates these reports.
 
 Canonical run: 2026-08-03, GPU 7 (isolated RTX 4090), torch 2.11.0+cu130,
 triton 3.6.0, driver 580.126.09.

@@ -1,7 +1,7 @@
 # nsys derived reports
 
-Machine-readable reports regenerated **2026-08-04** from the **committed** traces in
-`outputs/nsys_traces/*.nsys-rep` (which are tracked in git). No GPU needed — pure
+Machine-readable reports regenerated **2026-08-04** from the locally-archived
+traces (binary `.nsys-rep` is **not distributed** in this repo). No GPU needed — pure
 `nsys stats` computation on the existing `.nsys-rep` files.
 
 Command per trace `<t>`:
@@ -26,7 +26,7 @@ Avg/Med/Min/Max/StdDev + total time).
 
 ## Ledger cross-check (README §What the trace tells us)
 
-All numbers below were **re-derived from the committed traces** and reconcile the
+All numbers below were **re-derived from those locally-archived traces** and reconcile the
 README claims:
 
 | README claim | Derived value | Source trace | Status |
