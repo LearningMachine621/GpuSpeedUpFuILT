@@ -83,7 +83,7 @@ evidence audit（全表重跑、删除不可复现、修正 harness bug）
 | GPU | 1× RTX 4090 24GB（8-GPU 主机，**CUDA_VISIBLE_DEVICES 隔离**；争抢会差 5-15×） |
 | 计算光刻负载 | 256 tiles（16 base × 16 clone），1024×1024 tile，20 iters |
 | torch / Triton / CUDA | 2.11.0+cu130 / 3.6.0 / 13.0 |
-| nsys | 2025.3.2（`.nsys-rep` 已提交，~11-20MB × 5 variants） |
+| nsys | 2025.3.2（nsys 派生报告已提交（`nsys_reports/`），二进制 trace 不分发） |
 | benchmark | 3 reps，mean ± std（`rerun_headline.py` 子进程驱动） |
 | tiles 数据 | `/data/lyj/FuILT/tiles_from_patch` |
 
@@ -364,7 +364,7 @@ benchmarks/results/            # committed raw JSON（头条/5-mode/v8/hierarchi
 ├── hierarchical.json          # 45×
 ├── nsys_reports/              # 5 traces 的派生统计
 ├── compare_*.json             # CUDA/PyTorch/levelset 数值等价
-outputs/nsys_traces/*.nsys-rep # 已提交的 nsys trace（~11-20MB × 5）
+# 二进制 .nsys-rep trace 不随仓分发；nsys_reports/ 派生报告已提交，数字可复核
 docs/
 ├── fuilt_readme_final.md      # 招聘材料版 README（问题/贡献/数字/架构/复现/限制）
 ├── p01_ifft_linearity_proof.md    # P0.1 数学证明

@@ -4,10 +4,10 @@
 > 用 profile 驱动的三层手段（算法级等价重写 / 数据流编排 / kernel 融合）把端到端延迟压缩 **22.5×**，
 > 其中最大单笔收益来自一条数学等式（IFFT 线性性），零新 kernel、数学严格等价（实测 fp32 max_abs_diff ≤ 3.7e-9）。
 >
-> 完整研究叙事：[`optimization_journey.md`](optimization_journey.md) ·
-> 证据台账：[`verifiable_results.md`](verifiable_results.md) ·
-> 瓶颈迁移图：[`bottleneck_shift.md`](bottleneck_shift.md) ·
-> 面试讲法：[`gpu4fuilt_interview.md`](gpu4fuilt_interview.md)
+> 完整研究叙事：[`docs/optimization_journey.md`](docs/optimization_journey.md) ·
+> 证据台账：[`docs/verifiable_results.md`](docs/verifiable_results.md) ·
+> 瓶颈迁移图：[`docs/bottleneck_shift.md`](docs/bottleneck_shift.md) ·
+> 面试讲法：[`docs/gpu4fuilt_interview.md`](docs/gpu4fuilt_interview.md)
 
 ---
 
@@ -115,7 +115,7 @@ CUDA_VISIBLE_DEVICES=<idle> python -m baseline.verify_p01_equivalence --out-json
 ```
 
 全部 raw 输出已提交：`benchmarks/results/*.json`（含 nsys 派生报告 `nsys_reports/`；二进制 `.nsys-rep` trace 未包含在本仓）；
-"数字 → 脚本 → 命令 → 环境"的完整台账见 [`verifiable_results.md`](verifiable_results.md)。
+"数字 → 脚本 → 命令 → 环境"的完整台账见 [`docs/verifiable_results.md`](docs/verifiable_results.md)。
 
 ## 6. 限制条件
 
