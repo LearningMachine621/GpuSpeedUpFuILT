@@ -114,7 +114,7 @@ python -m baseline.test_baseline_v8_bigbuf_ablation --out-json benchmarks/result
 CUDA_VISIBLE_DEVICES=<idle> python -m baseline.verify_p01_equivalence --out-json benchmarks/results/p01_equivalence.json
 ```
 
-全部 raw 输出已提交：`benchmarks/results/*.json` + `outputs/nsys_traces/*.nsys-rep`；
+全部 raw 输出已提交：`benchmarks/results/*.json`（含 nsys 派生报告 `nsys_reports/`；二进制 `.nsys-rep` trace 未包含在本仓）；
 "数字 → 脚本 → 命令 → 环境"的完整台账见 [`verifiable_results.md`](verifiable_results.md)。
 
 ## 6. 限制条件

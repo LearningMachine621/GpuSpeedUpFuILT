@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fuilt"
+version = "0.1.0"
+description = "GPU-accelerated FuILT framework"
+authors = [{name = "Your Name"}]
+
+[tool.setuptools.packages.find]
+where = ["src"]

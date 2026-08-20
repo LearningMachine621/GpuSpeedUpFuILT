@@ -1,0 +1,53 @@
+{
+  "script": "baseline/test_baseline_v8_bigbuf_ablation.py",
+  "date": "2026-08-04 12:37:36",
+  "git_commit": "8fc358b",
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "env": {
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0",
+    "triton": "3.6.0"
+  },
+  "config": {
+    "canvas": "4096x4096",
+    "S": 1024,
+    "O": 64,
+    "warmup": 5,
+    "reps": 50
+  },
+  "backends": [
+    {
+      "name": "cuda_bigbuf",
+      "fuse4_us_per_call": 29.241599986562505,
+      "split4_us_per_call": 26.518599916016683,
+      "fuse4_vram_mb": 96.0,
+      "split4_vram_mb": 208.0,
+      "fuse4_diff_vs_cuda": 0.0,
+      "split4_diff_vs_cuda": 0.0,
+      "fuse4_pass": true,
+      "split4_pass": true
+    },
+    {
+      "name": "pytorch_inplace",
+      "fuse4_us_per_call": 179.75224007386714,
+      "split4_us_per_call": 101.77115997066721,
+      "fuse4_vram_mb": 134.5234375,
+      "split4_vram_mb": 210.0,
+      "fuse4_diff_vs_cuda": 0.0,
+      "split4_diff_vs_cuda": 0.0,
+      "fuse4_pass": true,
+      "split4_pass": true
+    },
+    {
+      "name": "triton_bigbuf",
+      "fuse4_us_per_call": 46.04829999152571,
+      "split4_us_per_call": 44.35395996551961,
+      "fuse4_vram_mb": 96.0,
+      "split4_vram_mb": 208.0,
+      "fuse4_diff_vs_cuda": 0.0,
+      "split4_diff_vs_cuda": 0.0,
+      "fuse4_pass": true,
+      "split4_pass": true
+    }
+  ]
+}

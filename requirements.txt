@@ -1,0 +1,12 @@
+# Tested environment (see README "Tested on" and docs/verifiable_results.md):
+#   torch 2.11.0+cu130, triton 3.6.0, CUDA 13.0, driver 580.126.09, Python 3.13
+# Versions are floor-pinned (>=) on purpose: the exact torch build that was
+# benchmarked is the CUDA-index wheel 2.11.0+cu130, which plain pip (PyPI) does
+# not carry — install it from the NVIDIA index:
+#   pip install torch==2.11.0+cu130 --index-url https://download.pytorch.org/whl/cu130
+torch>=2.11
+triton>=3.6
+numpy>=2.0
+opencv-python-headless>=4.10
+klayout>=0.30
+ninja>=1.11

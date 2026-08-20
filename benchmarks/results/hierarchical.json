@@ -1,0 +1,46 @@
+{
+  "script": "baseline/test_baseline_v8_hierarchical_pipeline.py",
+  "date": "2026-08-04 12:38:35",
+  "git_commit": "8fc358b",
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "env": {
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0",
+    "triton": "3.6.0"
+  },
+  "config": {
+    "S": 1024,
+    "O": 64,
+    "reps": 5
+  },
+  "rows_ms": [
+    {
+      "n_tiles": 4,
+      "flat_ms": 0.05174020043341443,
+      "hier_cuda_ms": 0.221794999379199,
+      "hier_triton_ms": 0.22031620028428733,
+      "hier_pytorch_ms": 0.320892600575462
+    },
+    {
+      "n_tiles": 16,
+      "flat_ms": 0.466097000753507,
+      "hier_cuda_ms": 2.1787887992104515,
+      "hier_triton_ms": 2.148425999621395,
+      "hier_pytorch_ms": 3.3704937988659367
+    },
+    {
+      "n_tiles": 64,
+      "flat_ms": 1.961957999446895,
+      "hier_cuda_ms": 25.793954999244306,
+      "hier_triton_ms": 25.714052200783044,
+      "hier_pytorch_ms": 34.213893600099254
+    },
+    {
+      "n_tiles": 256,
+      "flat_ms": 7.8917238002759404,
+      "hier_cuda_ms": 361.2303397996584,
+      "hier_triton_ms": 361.08787339908304,
+      "hier_pytorch_ms": 409.9461109988624
+    }
+  ]
+}

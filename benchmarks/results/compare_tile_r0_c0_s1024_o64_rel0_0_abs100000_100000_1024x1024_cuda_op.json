@@ -1,0 +1,34 @@
+{
+  "tile": {
+    "oas_file": "/data/lyj/FuILT/tiles_from_patch/tile_r0_c0_s1024_o64_rel0_0_abs100000_100000_1024x1024.oas",
+    "tile_size": 1024,
+    "mode": "cuda_op"
+  },
+  "loss": {
+    "original_levelset": 24813.357421875,
+    "v2_optimized": 401336.6875,
+    "abs_diff": 376523.330078125,
+    "rel_diff_vs_original": 15.174219420471852
+  },
+  "grad": {
+    "original_stats": {
+      "grad_mean_abs": 0.43755990266799927,
+      "grad_max_abs": 3.8616580963134766,
+      "grad_min_abs": 0.0001922394149005413,
+      "grad_l2": 875.2507934570312
+    },
+    "v2_stats": {
+      "grad_mean_abs": 0.0,
+      "grad_max_abs": 0.0,
+      "grad_min_abs": 0.0,
+      "grad_l2": 0.0
+    },
+    "cosine_similarity": 0.0
+  },
+  "original_detail": {
+    "l2loss": 7976.40771484375,
+    "pvbl2": 16836.94921875,
+    "pvbloss": 213.8485565185547
+  },
+  "note": "original_levelset 的 loss 含 PVB 项；v2 优化链路主要对应 nominal 打印项，数值通常不会严格一致。"
+}

@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+build/
+dist/
+.eggs/
+
+# Editable install artifacts
+*.so
+
+# CUDA / PyTorch JIT build cache
+.torch_extensions/
+**/.torch_extensions/
+
+# Benchmark outputs and generated artifacts
+outputs/*
+tile_masks/
+large_mask_results/
+*.nsys-rep
+*.ncu-rep
+*.qdrep
+*.qdstrm
+# Raw evidence kept in git: nsys traces (.nsys-rep) + historical small JSONs.
+# Derived .sqlite stats stay ignored (rebuilt from .nsys-rep by `nsys stats`).
+!outputs/nsys_traces/
+outputs/nsys_traces/*
+!outputs/nsys_traces/*.nsys-rep
+!outputs/bench_matrix/
+outputs/bench_matrix/*
+!outputs/bench_matrix/*.json
+!outputs/compare_single_tile/
+outputs/compare_single_tile/*
+!outputs/compare_single_tile/*.json
+
+# Large binary blobs (install manually if needed)
+*.rpm
+*.deb
+*.tar.gz
+*.zip
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Local Claude config (per-developer)
+.claude/
+
+# Empty data dir contents (keep dir structure)
+data/*
+!data/.gitkeep
+
+# Logs
+*.log
+/tmp/

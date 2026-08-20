@@ -1,0 +1,37 @@
+{
+  "tile": {
+    "oas_file": "/data/lyj/FuILT/tiles_from_patch/tile_r0_c0_s1024_o64_rel0_0_abs100000_100000_1024x1024.oas",
+    "tile_index": 0
+  },
+  "loss_compare": {
+    "original_levelset": 24813.357421875,
+    "fft_equivalent": 24813.357421875,
+    "abs_diff": 0.0,
+    "rel_diff_vs_original": 0.0
+  },
+  "detail_compare": {
+    "l2loss_original": 7976.40771484375,
+    "l2loss_fft": 7976.40771484375,
+    "pvbl2_original": 16836.94921875,
+    "pvbl2_fft": 16836.94921875,
+    "pvbloss_original": 213.8485565185547,
+    "pvbloss_fft": 213.8485565185547
+  },
+  "grad_compare": {
+    "original_stats": {
+      "grad_mean_abs": 0.43755990266799927,
+      "grad_max_abs": 3.8616580963134766,
+      "grad_min_abs": 0.0001922394149005413,
+      "grad_l2": 875.2507934570312
+    },
+    "fft_stats": {
+      "grad_mean_abs": 0.43755990266799927,
+      "grad_max_abs": 3.8616580963134766,
+      "grad_min_abs": 0.0001922394149005413,
+      "grad_l2": 875.2507934570312
+    },
+    "cosine_similarity": 1.0,
+    "max_abs_diff": 0.0
+  },
+  "note": "该 FFT 版本按原版 compute_grad 的 forward/backward 公式重写，理论上应与原版高度一致。"
+}

@@ -1,0 +1,19 @@
+{
+  "script": "baseline/test_baseline_v7_fuselevelset.py",
+  "date": "2026-08-03 18:32:37",
+  "mode": "pytorch_fft (graph replay)",
+  "pointwise": "cuda",
+  "num_tiles": 1024,
+  "grid": 32,
+  "tile_size": 1024,
+  "iterations": 20,
+  "final_loss": 381020.2,
+  "total_e2e_s": 23.11773920059204,
+  "peak_vram_mb": 23337.0537109375,
+  "profile_times_s": null,
+  "levelset_micro_avg_ms_per_tile": null,
+  "graph_capture_s": 0.21954870223999023,
+  "graph_replay_ms_per_iter": 116.54519932344556,
+  "eval_l2": 10240.0,
+  "eval_epe": 0.0
+}

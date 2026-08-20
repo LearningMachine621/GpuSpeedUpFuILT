@@ -1,0 +1,36 @@
+
+NOTICE: Existing SQLite export found: outputs/nsys_traces/v7_cuda_rerun.sqlite
+        It is assumed file was previously exported from: outputs/nsys_traces/v7_cuda_rerun.nsys-rep
+        Consider using --force-export=true if needed.
+
+Processing [outputs/nsys_traces/v7_cuda_rerun.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-x64/reports/cuda_api_sum.py]... 
+
+ ** CUDA API Summary (cuda_api_sum):
+
+ Time (%)  Total Time (ns)  Num Calls   Avg (ns)     Med (ns)    Min (ns)   Max (ns)    StdDev (ns)               Name              
+ --------  ---------------  ---------  -----------  -----------  --------  -----------  -----------  -------------------------------
+     36.5    1,794,782,825     58,573     30,641.8      4,861.0       782    8,564,995    392,043.0  cudaStreamSynchronize          
+     29.8    1,463,915,828     59,597     24,563.6      3,368.0     2,238  564,453,228  2,318,537.8  cudaMemcpyAsync                
+     21.0    1,035,713,359    162,078      6,390.2      5,533.0     3,295   23,815,139     85,560.9  cudaLaunchKernel               
+      6.7      327,550,353     67,988      4,817.8      4,693.0     3,219      225,886      1,692.6  cuLaunchKernel                 
+      3.9      190,738,435         22  8,669,928.9  7,052,130.0    60,547   35,168,629  7,965,279.6  cuLibraryLoadData              
+      0.8       39,717,002        129    307,883.7    343,732.0    72,379      402,443     84,399.5  cudaMalloc                     
+      0.4       19,934,946         45    442,998.8      5,662.0     1,222    3,042,836    971,788.6  cudaDeviceSynchronize          
+      0.4       17,849,978    162,078        110.1         96.0        69       11,505         72.4  cuKernelGetName                
+      0.2       10,164,419          7  1,452,059.9  1,936,543.0    23,761    3,199,855  1,167,398.4  cudaHostAlloc                  
+      0.2        9,058,398      1,804      5,021.3      4,150.0     2,500      225,394      5,516.6  cudaMemsetAsync                
+      0.1        5,089,296     10,908        466.6        421.0       246       19,056        306.1  cudaStreamIsCapturing_v10000   
+      0.0        1,834,127          5    366,825.4    407,859.0   151,733      492,787    135,886.2  cuModuleLoadData               
+      0.0        1,482,941          5    296,588.2     11,994.0     6,199    1,445,132    642,061.1  cuMemcpyHtoD_v2                
+      0.0          866,701      1,033        839.0        751.0       474       10,955        545.7  cudaEventQuery                 
+      0.0          735,794        522      1,409.6      1,093.0       880       23,417      1,491.9  cudaEventRecordWithFlags_v11010
+      0.0          628,133          1    628,133.0    628,133.0   628,133      628,133          0.0  cuMemFree_v2                   
+      0.0          145,246         65      2,234.6      1,535.0       495       14,128      2,555.1  cuLibraryGetKernel             
+      0.0          142,010          1    142,010.0    142,010.0   142,010      142,010          0.0  cuMemAlloc_v2                  
+      0.0           90,889         14      6,492.1      4,248.0     2,855       35,473      8,443.0  cudaEventCreateWithFlags       
+      0.0           62,256          2     31,128.0     31,128.0    28,496       33,760      3,722.2  cuMemGetInfo_v2                
+      0.0           39,633         10      3,963.3      3,833.5       566       13,076      3,892.9  cudaEventDestroy               
+      0.0            3,478          1      3,478.0      3,478.0     3,478        3,478          0.0  cuInit                         
+      0.0            2,387          2      1,193.5      1,193.5       590        1,797        853.5  cudaGetDeviceProperties_v12000 
+      0.0            1,319          1      1,319.0      1,319.0     1,319        1,319          0.0  cuModuleGetLoadingMode         
+

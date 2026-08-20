@@ -1,0 +1,89 @@
+{
+  "script": "baseline/benchmark_v7_graph_modes.py",
+  "date": "2026-08-03 14:18:14",
+  "git_commit": "2f13035",
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "cuda_visible_devices": "7",
+  "env": {
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0",
+    "triton": "3.6.0"
+  },
+  "args": {
+    "iters": 20,
+    "warmup": 3,
+    "multiplier": 16,
+    "loss_tol": 0.05,
+    "param_tol": 0.5,
+    "tiles_dir": "/data/lyj/FuILT/tiles_from_patch"
+  },
+  "reference": "mode 2 (fused eager CUDA) is the numerical reference",
+  "correctness_gate": "loss_rel_diff < loss_tol; mode 3 expected FAIL (capture-stream bug)",
+  "modes": [
+    {
+      "mode": 1,
+      "name": "unfused eager",
+      "pointwise": "unfused",
+      "exec": "eager",
+      "capture_safe": null,
+      "ms_per_iter": 43.5433,
+      "param_diff": 0.0,
+      "loss_rel_diff": 0.0,
+      "loss": 380989.7,
+      "status": "PASS",
+      "note": "pure-PyTorch baseline"
+    },
+    {
+      "mode": 2,
+      "name": "fused eager",
+      "pointwise": "cuda",
+      "exec": "eager",
+      "capture_safe": null,
+      "ms_per_iter": 30.9568,
+      "param_diff": 0.0,
+      "loss_rel_diff": 0.0,
+      "loss": 380989.7,
+      "status": "REF",
+      "note": "reference trajectory"
+    },
+    {
+      "mode": 3,
+      "name": "fused graph",
+      "pointwise": "cuda",
+      "exec": "graph",
+      "capture_safe": false,
+      "ms_per_iter": 27.6598,
+      "param_diff": 0.10400390625,
+      "loss_rel_diff": 1.0197587998277906,
+      "loss": -7527.89921875,
+      "status": "FAIL",
+      "note": "default-stream launch skipped on replay"
+    },
+    {
+      "mode": 4,
+      "name": "triton graph",
+      "pointwise": "triton",
+      "exec": "graph",
+      "capture_safe": null,
+      "ms_per_iter": 29.6491,
+      "param_diff": 0.0,
+      "loss_rel_diff": 0.0,
+      "loss": 380989.7,
+      "status": "PASS",
+      "note": "OK"
+    },
+    {
+      "mode": 5,
+      "name": "fixed CUDA graph",
+      "pointwise": "cuda",
+      "exec": "graph",
+      "capture_safe": true,
+      "ms_per_iter": 29.1699,
+      "param_diff": 0.0,
+      "loss_rel_diff": 0.0,
+      "loss": 380989.7,
+      "status": "PASS",
+      "note": "OK"
+    }
+  ]
+}

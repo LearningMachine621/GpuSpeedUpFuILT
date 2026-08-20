@@ -1,0 +1,97 @@
+{
+  "script": "baseline/verify_p01_equivalence.py",
+  "date": "2026-08-20 15:46:28",
+  "git_commit": "6bd37cd",
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "torch": "2.11.0+cu130",
+  "config": {
+    "K": 24,
+    "N": 1024,
+    "norm": "forward",
+    "seeds": 5
+  },
+  "fp32_complex64": [
+    {
+      "seed": 0,
+      "max_abs_diff": 1.3969838619232178e-09,
+      "n_nonzero": 784342,
+      "n_elements": 1048576,
+      "rel_vs_max_abs": 3.023189069438219e-07
+    },
+    {
+      "seed": 1,
+      "max_abs_diff": 5.820766091346741e-10,
+      "n_nonzero": 902748,
+      "n_elements": 1048576,
+      "rel_vs_max_abs": 2.5369887891480205e-07
+    },
+    {
+      "seed": 2,
+      "max_abs_diff": 2.0954757928848267e-09,
+      "n_nonzero": 870886,
+      "n_elements": 1048576,
+      "rel_vs_max_abs": 4.69429841988872e-07
+    },
+    {
+      "seed": 3,
+      "max_abs_diff": 3.725290298461914e-09,
+      "n_nonzero": 809837,
+      "n_elements": 1048576,
+      "rel_vs_max_abs": 4.882067853542114e-07
+    },
+    {
+      "seed": 4,
+      "max_abs_diff": 6.984919309616089e-10,
+      "n_nonzero": 883549,
+      "n_elements": 1048576,
+      "rel_vs_max_abs": 2.6062521208376634e-07
+    }
+  ],
+  "fp64_complex128": [
+    {
+      "seed": 0,
+      "max_abs_diff": 3.0357660829594124e-18,
+      "n_nonzero": 814076,
+      "n_elements": 1048576,
+      "rel_vs_max_abs": 6.569650835414141e-16
+    },
+    {
+      "seed": 1,
+      "max_abs_diff": 1.0842021724855044e-18,
+      "n_nonzero": 902309,
+      "n_elements": 1048576,
+      "rel_vs_max_abs": 4.725507578185693e-16
+    },
+    {
+      "seed": 2,
+      "max_abs_diff": 3.903127820947816e-18,
+      "n_nonzero": 829662,
+      "n_elements": 1048576,
+      "rel_vs_max_abs": 8.743811847818209e-16
+    },
+    {
+      "seed": 3,
+      "max_abs_diff": 6.938893903907228e-18,
+      "n_nonzero": 808530,
+      "n_elements": 1048576,
+      "rel_vs_max_abs": 9.093559168028104e-16
+    },
+    {
+      "seed": 4,
+      "max_abs_diff": 1.3010426069826053e-18,
+      "n_nonzero": 877090,
+      "n_elements": 1048576,
+      "rel_vs_max_abs": 4.854520967497657e-16
+    }
+  ],
+  "sanity_ulp_perturbation": [
+    {
+      "seed": 0,
+      "max_abs_diff": 1.3969838619232178e-09,
+      "n_nonzero": 784343,
+      "n_elements": 1048576,
+      "rel_vs_max_abs": 3.023189069438219e-07
+    }
+  ],
+  "conclusion": "OLD (24x ifft2, image-domain accumulation) vs NEW (frequency-domain sum, 1x ifft2): strictly equal in exact arithmetic by IFFT linearity; measured differences below are finite-precision only. Bit-equality is a per-data measurement, not a theorem."
+}
