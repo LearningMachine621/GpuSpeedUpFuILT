@@ -328,6 +328,15 @@ batch 扩到 1024 tile，撞上 24GB 显存极限，**OOM 2/3**。
 
 **2026-08-26 哨兵复测**（真空闲 GPU 7 自动触发，`headline_e2e_20260826_sentinel.json`）：全表复现，基线侧 ±0.5% 内，**头条 21.6×**（P0.1+P0.3 侧 +4.1%，D2H/IO 敏感 + 时钟残留）——22.5× 保持权威，跨环境散布 ~±4%。
 
+**2026-08-26 全栈补测（graph capture 叠加，此前从未进头条数字）**：eager 每 iter 循环 40.3 ms（stage 表）
+vs graph replay **29.16 ms/iter**（三连测 29.156/29.158/29.154，±0.01%）→ 循环节省 27%；但循环节只占纯
+流水线 ~31%（H2D 30% + D2H 38% 是大头）→ 全栈纯 ≈ 2.23 s ≈ **23.8×**（推导值：graph 模式不打印同口径
+纯耗时，非循环段按 eager 同段代入）。nsys 全栈 trace（`v7_fullstack_graph`，已入库）证实剩余格局不变：
+FFT 链 34.1% / abs+pow 24.0%（eval 相）/ pointwise 0.2% / **D2H 占 mem-op 90.5%**——graph 的收益被
+P0.1/P0.3 提前吃掉大半，新瓶颈是 IO 段。**"全部有效加速"盘点**：头条链（22.5×）+ graph（≈23.8× 上限）
+为栈内全部；v8 bigbuf（3.9× kernel 级）、P0.2（1.48× eval 相）未整合进主流水线；P0.4/AMP/v4 为反例；
+v2 从未进现代复测表（被后续吸收，小缺口）。
+
 ### 10.2 反例排查
 
 - **v5 AMP 双态**：脚本默认 AMP=off，README 声称 fp16——两个状态都测了：**18.05 vs 18.01，无差异**（graph 开销主导，AMP 声明成立但改变不了什么）。
@@ -413,7 +422,7 @@ benchmarks/results/            # committed raw JSON（头条/5-mode/v8/hierarchi
 ├── p01_equivalence_real.json  # 同上、真实光学核（fp32 ≤2.2e-11）
 ├── graph_stream_capture.json  # capture-stream bug 节点级证明（空图 + replay 冻结）
 ├── pointwise_kernel_count.json # pointwise 算子数+计时实测（10→1；wall 3.1×/GPU 5.8×）
-├── nsys_reports/              # 5 traces 的派生统计
+├── nsys_reports/              # 6 traces 派生统计（含 08-26 全栈 graph 版）
 ├── compare_*.json             # CUDA/PyTorch/levelset 数值等价
 outputs/nsys_traces/*.nsys-rep # 已提交的 nsys trace（~11-20MB × 5）
 docs/

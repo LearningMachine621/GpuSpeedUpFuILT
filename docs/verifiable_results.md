@@ -165,6 +165,22 @@ measurements: 22.5× (2026-08-04) stays canonical; 21.6× (2026-08-26) bounds
 the cross-run spread at ~±4%.** One v7-CUDA rep crashed at first-launch
 extension compile (returncode 1); its other two reps agree (9.056/9.093).
 
+### 6. Full-stack (P0.1 + P0.3 + graph capture) — first measured 2026-08-26
+
+The headline number is the **eager** pipeline; `FUILT_USE_GRAPH=1` on top was
+never in the headline table. Same idle GPU 7, 256 tiles × 20 iters:
+
+- per-iter loop: eager 40.3 ms (stage table 0.805 s/20) vs graph replay
+  **29.16 ms/iter** (29.156/29.158/29.154 across 3 runs, ±0.01%) → **−27%**
+- pure-pipeline equivalent ≈ 2.23 s (derived: non-loop stages taken from the
+  eager run — graph mode prints no same-metric line) → **≈ 23.8× vs v1**
+  (canonical eager 22.5×); the loop is now only ~31% of pure pipeline, so
+  graph buys ~5% end-to-end — P0.1/P0.3 already consumed most of its room
+- nsys trace committed: `outputs/nsys_traces/v7_fullstack_graph.nsys-rep`
+  (derived: `nsys_reports/v7_fullstack_graph_*`): FFT chain **34.1%**
+  (regular 17.3 + vector 16.8), abs+pow 24.0% (eval phase), fused pointwise
+  **0.2%**, **D2H = 90.5% of mem-op time** — remaining bottleneck is IO.
+
 ## Freshly re-verified 2026-08-04 (GPU 7) — full headline table re-run
 
 Every headline row re-run on an **idle, isolated GPU 7** (all 8 GPUs present,

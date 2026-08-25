@@ -1,7 +1,7 @@
 # nsys derived reports
 
-Machine-readable reports regenerated **2026-08-04** from the locally-archived
-traces (binary `.nsys-rep` is **not distributed** in this repo). No GPU needed — pure
+Machine-readable reports regenerated **2026-08-04** from the **committed** traces in
+`outputs/nsys_traces/*.nsys-rep` (which are tracked in git). No GPU needed — pure
 `nsys stats` computation on the existing `.nsys-rep` files.
 
 Command per trace `<t>`:
@@ -26,7 +26,7 @@ Avg/Med/Min/Max/StdDev + total time).
 
 ## Ledger cross-check (README §What the trace tells us)
 
-All numbers below were **re-derived from those locally-archived traces** and reconcile the
+All numbers below were **re-derived from the committed traces** and reconcile the
 README claims:
 
 | README claim | Derived value | Source trace | Status |
@@ -38,6 +38,7 @@ README claims:
 | v7-Triton total GPU time **3.096 s** | **3.0964** s | `v7_triton_rerun` kern_sum (Σ rows) | ✅ |
 | FFT chain **49.9 %** | 19.5 + 18.2 + 12.3 = **50.0 %** | `v7_triton_rerun` kern_sum | ⚠ rounding — text updated to 50.0 % |
 | FFT chain **after P0.1** | `regular_fft` 17.2 % + `vector_fft` 16.7 % = **33.9 %** (complex multiply folded into combined kernel: residual BinaryFunctor-complex 0.4 %) | `v7_p013_nvtx` kern_sum (P0.1+P0.3 trace) | added 2026-08-04 — post-P0.1 timeline |
+| Full-stack (P0.1+P0.3+**graph**) | FFT chain 34.1 % (17.3+16.8), abs+pow 24.0 %, pointwise 0.2 %, D2H = 90.5 % of mem-op time | `v7_fullstack_graph` kern_sum + mem_time_sum | added 2026-08-26 — same mix as eager; remaining bottleneck is IO |
 
 > **Why 49.9 vs 50.0:** the README table rows (19.5 % / 18.2 % / 12.3 % = the FFT
 > forward + IFFT + complex multiply) come from the **GPU-isolated rerun** trace

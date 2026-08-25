@@ -1,0 +1,12 @@
+Generating SQLite file outputs/nsys_traces/v7_fullstack_graph.sqlite from outputs/nsys_traces/v7_fullstack_graph.nsys-rep
+Processing [outputs/nsys_traces/v7_fullstack_graph.sqlite] with [/opt/nvidia/nsight-systems/2025.3.2/host-linux-x64/reports/cuda_gpu_mem_time_sum.py]... 
+
+ ** CUDA GPU MemOps Summary (by Time) (cuda_gpu_mem_time_sum):
+
+ Time (%)  Total Time (ns)  Count   Avg (ns)  Med (ns)  Min (ns)   Max (ns)    StdDev (ns)            Operation           
+ --------  ---------------  ------  --------  --------  --------  -----------  -----------  ------------------------------
+     90.5      861,488,780  18,050  47,727.9   1,120.0       416  518,424,040  3,861,491.5  [CUDA memcpy Device-to-Host]  
+      9.4       89,445,724   8,981   9,959.4     352.0       320      913,601     39,570.1  [CUDA memcpy Host-to-Device]  
+      0.1          643,105     512   1,256.1   1,248.0     1,216        1,344         15.8  [CUDA memcpy Device-to-Device]
+      0.0          371,392   1,024     362.7     352.0       320        1,184        118.6  [CUDA memset]                 
+
