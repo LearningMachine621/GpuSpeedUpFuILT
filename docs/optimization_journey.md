@@ -232,6 +232,12 @@ v7 每 tile 每 iter 做 24 次 `ifft2(mask_fft * kernel_fft[k])`。盯着 profi
 
 **结果**：v7-CUDA 8.96s / v7-Triton **9.18s**——Triton 几乎追平 CUDA（elementwise 是 Triton 的甜区，且 Triton 默认 CUDA-Graph-safe）。
 
+**Kernel 级审计（2026-08-23，SASS 静态反汇编，详见 `kernel_report_card.md`）**：Triton pointwise **全 128-bit
+向量化**（SASS 32×`LDG.E.128`/`STG.E.128`，零标量）但 **188 寄存器 / 16.7% 理论 occupancy**——靠 8 元素/线程
+的 ILP + 向量访存打平 **100% occupancy 的 CUDA 标量版**（16 寄存器、纯 32-bit load）：两版 in-pipeline
+7,526 vs 7,861 ns。教训：**occupancy 不是目的，带宽饱和才是**。fuse4/split4 为 40/33 寄存器（轻）。⚠ 本机
+VM 禁 NCU 计数器（ERR_NVGPUCTRPERM），occupancy 只有理论值——升级路径已列在报告卡。
+
 ### 6.2 v8：bigbuf 数据结构重构
 
 把"每 tile 独立小张量"的树形组织，重构为**统一 bigbuf**——所有 tile 按固定 stride 平铺进一块连续大缓冲。
