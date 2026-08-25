@@ -83,7 +83,7 @@ evidence audit（全表重跑、删除不可复现、修正 harness bug）
 | GPU | 1× RTX 4090 24GB（8-GPU 主机，**CUDA_VISIBLE_DEVICES 隔离**；争抢会差 5-15×） |
 | 计算光刻负载 | 256 tiles（16 base × 16 clone），1024×1024 tile，20 iters |
 | torch / Triton / CUDA | 2.11.0+cu130 / 3.6.0 / 13.0 |
-| nsys | 2025.3.2（nsys 派生报告已提交（`nsys_reports/`），二进制 trace 不分发） |
+| nsys | 2025.3.2（`.nsys-rep` 已提交，~11-20MB × 5 variants） |
 | benchmark | 3 reps，mean ± std（`rerun_headline.py` 子进程驱动） |
 | tiles 数据 | `/data/lyj/FuILT/tiles_from_patch` |
 
@@ -176,10 +176,25 @@ v7 每 tile 每 iter 做 24 次 `ifft2(mask_fft * kernel_fft[k])`。盯着 profi
 | 每 iter ifft2 | 24 | **1** |
 | LevelSet 阶段 | — | **10.5×** |
 | 端到端（v7→P0.1） | 8.96s | 2.80s（**3.20×**） |
-| 数值 | — | **数学严格等价**；实测 fp32 `max_abs_diff ≤ 3.7e-9`（fp64 ~1e-18 确认纯舍入，`p01_equivalence.json`） |
+| 数值 | — | **数学严格等价**；实测 fp32 `max_abs_diff ≤ 3.7e-9`（真实光学核 ≤ 2.2e-11；fp64 ~1e-18；测量与推导见 §5.5） |
 | 新 kernel / 新硬件 | — | 零 |
 
 > 核心洞察：**profiler first, kernel later——瓶颈往往在"算法怎么表达"，不在 kernel。** 一个被遗忘的线性性事实让 GPU 少做了 23/24 的活。
+
+### 5.5 数值等价性：怎么测、怎么推导（2026-08-25 补全）
+
+**测量**（`baseline/verify_p01_equivalence.py`）：同一进程、同一份 seeded 输入，两条**零共享代码**的路径各跑一遍——OLD（24× ifft2 + 像域累加）vs NEW（频域合并 + 1× ifft2）——取 1024² 元素 `|OLD−NEW|` 的 max。三个防假阳性设计：① **1-ulp 扰动 sanity 臂**（对 NEW 单元素加 1 ulp，比较器必须报非零——灵敏度实证）；② **fp32/fp64 双臂**（若数学不等价，fp64 差异不会塌缩）；③ raw JSON 落盘。
+
+**推导**（前向误差模型，完整版见 proof 文档 "Error-scale derivation"）：每条路径返回 `fl(A)+e`，`|e| ≲ γ_c·u·S`（u=单位舍入 2⁻²⁴/2⁻⁵³，c≈K+log₂N≈44 级操作，S=中间部分和量级）⟹ 差异**对 u 线性**。两个可证伪预言，全部命中：
+
+| 预言 | 实测 |
+|---|---|
+| `diff_fp32/diff_fp64 = u₃₂/u₆₄ = 2²⁹ ≈ 5.369e8` | 合成 5 seed：**4 个三位有效数字精确命中 5.37e8**；真实核 3 seed：1 个精确命中、2 个 6.4–6.7e8 |
+| 绝对量级在 `44u ≈ 2.6e-6` 界内 | 实测 4–8 ulp（随机符号 √c 消去解释富余） |
+
+**真实核复测**（`--real-kernels`：`focus.pt` 经流水线自己的 `_build_kernel_fft` 构造，scales 和≈210）：fp32 ≤ **2.2e-11**、fp64 ≤ 3.4e-20——比合成臂低两个量级（真实 35×35 核稀疏、幅值小），同样 2²⁹ 签名（`p01_equivalence_real.json`）。
+
+> 一句话：**等价是定理；残差对 u 线性（2²⁹ 精确命中 ⟹ 无精度相关放大）、4–8 ulp、有界可复现。** "数学严格等价、浮点纯舍入"从声明升级为推导 + 双预言验证。
 
 ---
 
@@ -190,6 +205,30 @@ v7 每 tile 每 iter 做 24 次 `ifft2(mask_fft * kernel_fft[k])`。盯着 profi
 把 levelset 计算也 fuse 进流水线；pointwise 融合 kernel 用 **Triton** 实现（`triton_fused_pointwise.py`）。
 
 **为什么融合**：每多一个 kernel 就多一次 launch + 中间结果过 HBM。融合后中间值留在寄存器，不碰 HBM（中间张量流量 G12）。
+
+**融合了多少个算子（2026-08-25 实测定论）**：生产 eager 链（`_compute_pointwise` unfused 分支，v5/v6 真身）
+**10 个 ATen kernel → 1 个**（torch.profiler 计数，`pointwise_kernel_count.json`）。
+此前文档写 "8"——那是 microbench 简化表达式的数（漏了 steepness 乘法链与 diff_sq）；README 的 "~5" 是更早
+粗估。"数表达式"与"profiler 实测"的差值本身就是一课。
+
+**融合收益（三域 × 三后端实测，1024² fp32，`pointwise_kernel_count.json`）**：
+
+| 域 | eager 10-op 链 | Triton 融合（生产） | CUDA 融合（上限参考） |
+|---|---:|---:|---:|
+| 纯 GPU 时间（profiler self-time） | 34.9 µs | **6.1 µs（5.8×）** | **5.4 µs（6.5×）** |
+| DRAM 流量（形状推算） | 96 MiB | **16 MiB（6×）** | 16 MiB（同算法结构，与实现无关） |
+| wall（含分发） | 90.9 µs | **29.3 µs（3.1×）** | **11.4 µs（8.0×）** |
+
+三列对照给出三层结论：
+
+1. **GPU 侧：流量比 6× ≈ GPU 时间比 5.8×/6.5×**——两个独立方法（形状算术 vs profiler）证实同一本质
+   收益（少搬 80 MiB + 消掉 9 个 kernel 尾部）；CUDA kernel 本身略优（5.4 vs 6.1µs，~12%），
+   手写版是真实上限——与 §11.2 的诚实结论一致。
+2. **wall 侧：比值从 3.1× 拉开到 8.0×**——差距不在 kernel 而在分发路径：Triton 的 Python 分发 ~23µs
+   vs pybind ~6µs，同一个"分发税"相差 4 倍。生产的完整答案是**融合 + graph capture**（分发也归零），
+   这也是 v7 端到端 CUDA 8.96s ≈ Triton 9.18s（+2.5%）的原因——流水线重叠摊薄了分发差。
+3. **确定性**：eager 链 wall 两轮 71→91µs 波动 ±25%（10 次 Python 分发对主机状态敏感），两个融合版
+   都纹丝不动——**确定性**是融合的隐性收益。
 
 **结果**：v7-CUDA 8.96s / v7-Triton **9.18s**——Triton 几乎追平 CUDA（elementwise 是 Triton 的甜区，且 Triton 默认 CUDA-Graph-safe）。
 
@@ -229,6 +268,8 @@ eager 模式正确、graph 模式错 → 不是数学问题，是**捕获语义*
 | 5 | graph + capture_safe=ON（当前流） | 0.00 | **PASS** |
 
 > 这是"可控变量实验"证明 bug 根因的标准示范——不是猜，是同一个 kernel 只改 stream 从错到对。
+>
+> **节点级复核（2026-08-25）**：`verify_graph_stream_capture.py` 用同一个编译产物的运行时开关捕获单 kernel 区域——OFF 时 torch 直接警告 "CUDA Graph is empty"、replay 后输出冻结（Δ=0.0）；ON 时 replay 重算且与 eager 完全一致。"没进图"从推断变成直接观测（`graph_stream_capture.json`）。
 
 ---
 
@@ -290,7 +331,7 @@ batch 扩到 1024 tile，撞上 24GB 显存极限，**OOM 2/3**。
 - **v5 AMP 双态**：脚本默认 AMP=off，README 声称 fp16——两个状态都测了：**18.05 vs 18.01，无差异**（graph 开销主导，AMP 声明成立但改变不了什么）。
 - **49.9 vs 50.0 对账**：README 文本与表格矛盾，根因是混用了两个 nsys trace（`v7_triton` vs `v7_triton_rerun`），统一后 **50.0%**。
 - **harness 两个 bug**：kernel micro-bench 的 import 错误（模块名不存在被 try/except 吞掉）+ 缺 warmup（首次 Triton 调用把 ~1.3s JIT 计进测量）。
-- **P0.1 "bit-exact" 声明撤回（2026-08-20）**：原引用的 `grad_max_abs_diff=0.0` 出自 Triton-vs-CUDA pointwise 校验，与 P0.1 无关（张冠李戴）。独立 A/B 校验（`verify_p01_equivalence.py`）：fp32 max_abs_diff ≤ 3.7e-9、fp64 ~1e-18——数学严格等价成立，逐位相等是过度声明，全部文档改为实测口径。**同期撤回的还有"levelset_simple.cu 被 FFT 路径（逐位等价）替代"的整个叙事**：baseline 起始就是 PyTorch FFT，不存在"空间卷积被替代"的历史；`compare_levelset_vs_fft_*.json` 的 0.0 测的是 FFT 原版 vs FFT 重排（参考实现前向本走 FFT），CUDA 空间卷积从未参与任何等价对比。
+- **P0.1 "bit-exact" 声明撤回（2026-08-20）**：原引用的 `grad_max_abs_diff=0.0` 出自 Triton-vs-CUDA pointwise 校验，与 P0.1 无关（张冠李戴）。独立 A/B 校验（`verify_p01_equivalence.py`）：fp32 max_abs_diff ≤ 3.7e-9、fp64 ~1e-18——数学严格等价成立，逐位相等是过度声明，全部文档改为实测口径。**同期撤回的还有"levelset_simple.cu 被 FFT 路径（逐位等价）替代"的整个叙事**：baseline 起始就是 PyTorch FFT，不存在"空间卷积被替代"的历史；`compare_levelset_vs_fft_*.json` 的 0.0 测的是 FFT 原版 vs FFT 重排（参考实现前向本走 FFT），CUDA 空间卷积从未参与任何等价对比。随后补全了完整论证：前向误差模型预测残差对 u 线性，实测 fp32/fp64 差异比精确 = 2²⁹（两精度 epsilon 之比），真实核复测 ≤ 2.2e-11（见 §5.5）。
 
 ---
 
@@ -301,6 +342,10 @@ batch 扩到 1024 tile，撞上 24GB 显存极限，**OOM 2/3**。
 - nsys in-pipeline 的 pointwise kernel 耗时 ~7.5µs（CUDA 和 Triton 一样）；
 - 隔离的 per-launch 延迟：CUDA 8.1µs vs Triton 24.5µs；
 - 两者不矛盾——Triton 的 Python 分发开销在 launch 重叠后被藏住。**不能拿两个域的 8.1 vs 24.5 去否定 nsys 的 7.5。**
+- **三域收敛的标准案例（2026-08-25，`pointwise_kernel_count.json`）**：同一对（eager 10-op 链 vs Triton 融合）
+  在三个域给出三个比值——流量推算 6×、纯 GPU 时间 5.8×、wall 3.1×。前两者收敛验证本质收益；wall 的差价
+  是 Triton Python 分发（29.3µs wall 中 GPU 只占 6.1µs）。结论：**报融合收益必须声明测量域**，
+  wall 域会系统性低估 kernel 能力。
 
 ### 11.2 手写 CUDA vs Triton 的诚实结论
 
@@ -362,17 +407,26 @@ benchmarks/results/            # committed raw JSON（头条/5-mode/v8/hierarchi
 ├── graph_modes.json           # 5-mode stream bug 证明
 ├── v8_ablation.json           # Triton/CUDA/PyTorch fuse4
 ├── hierarchical.json          # 45×
+├── p01_equivalence.json       # P0.1 等价性 A/B（合成数据，fp32 ≤3.7e-9）
+├── p01_equivalence_real.json  # 同上、真实光学核（fp32 ≤2.2e-11）
+├── graph_stream_capture.json  # capture-stream bug 节点级证明（空图 + replay 冻结）
+├── pointwise_kernel_count.json # pointwise 算子数+计时实测（10→1；wall 3.1×/GPU 5.8×）
 ├── nsys_reports/              # 5 traces 的派生统计
 ├── compare_*.json             # CUDA/PyTorch/levelset 数值等价
-# 二进制 .nsys-rep trace 不随仓分发；nsys_reports/ 派生报告已提交，数字可复核
+outputs/nsys_traces/*.nsys-rep # 已提交的 nsys trace（~11-20MB × 5）
 docs/
 ├── fuilt_readme_final.md      # 招聘材料版 README（问题/贡献/数字/架构/复现/限制）
 ├── p01_ifft_linearity_proof.md    # P0.1 数学证明
 ├── bottleneck_shift.md            # 瓶颈迁移 Before/After（nsys + microbench 数字汇总）
 ├── gpu4fuilt_interview.md         # 面试作战文档（实验重要度表 + 三条故事路径）
+├── kernel_report_card.md          # kernel 十连问报告卡（SASS 反汇编：向量化/寄存器/occupancy）
 ├── verifiable_results.md          # 证据台账（数字→脚本→复现命令→环境）
 └── nsys_trace_guide.md
 baseline/rerun_headline.py         # 头条表可复用驱动
+baseline/verify_p01_equivalence.py  # P0.1 等价性 A/B（--real-kernels 用真实核）
+baseline/verify_graph_stream_capture.py  # graph 捕获 bug 节点级证明
+baseline/multigpu_band_exchange.py # 多卡 halo 交换微基准（冒烟通过，等空闲采集）
+baseline/count_pointwise_kernels.py # pointwise 算子计数+计时（torch.profiler）
 ```
 
 复现入口：`docs/verifiable_results.md` 里每个数字都有**脚本 + 命令 + 环境 + raw 输出**。
@@ -385,7 +439,7 @@ baseline/rerun_headline.py         # 头条表可复用驱动
 
 建议主线：
 
-> 我先做 profile，发现 H2D 占 init 阶段 85%——问题不是算得慢，是 GPU 在等数据。所以第一步不是优化 kernel，而是用 pinned + async + stream 把传输藏进计算（3.97×）。但真正的跳变是 P0.1：我发现每 tile 要做 24 次 ifft2，而 IFFT 是线性算子——把 24 个核的加权和先算进频域（init 一次），每 iter 只剩 1 次 IFFT——数学上严格等价，浮点上实测 diff 在 1e-9 量级（不是逐位相等）。这个算法级重写单项 3.20×，零新 kernel。之后我做了融合减中间张量、bigbuf 地址合并，还在把流水线放进 CUDA Graph 时亲手定位了一个手写 kernel 的 stream bug：裸 `<<<>>>` 在 capture 时被静默跳过，我用 5-mode 可控变量实验证明了根因。最后我把所有头条数字重跑落盘，删掉不可复现的，修正了 harness 的两个 bug——端到端 22.5× 是 3 reps 复现的，不是纸面数字。
+> 我先做 profile，发现 H2D 占 init 阶段 85%——问题不是算得慢，是 GPU 在等数据。所以第一步不是优化 kernel，而是用 pinned + async + stream 把传输藏进计算（3.97×）。但真正的跳变是 P0.1：我发现每 tile 要做 24 次 ifft2，而 IFFT 是线性算子——把 24 个核的加权和先算进频域（init 一次），每 iter 只剩 1 次 IFFT——数学上严格等价，浮点上实测 diff 在 1e-9 量级且可推导：fp32/fp64 差异比精确等于 2²⁹，纯舍入无放大（不是逐位相等）。这个算法级重写单项 3.20×，零新 kernel。之后我做了融合减中间张量、bigbuf 地址合并，还在把流水线放进 CUDA Graph 时亲手定位了一个手写 kernel 的 stream bug：裸 `<<<>>>` 在 capture 时被静默跳过，我用 5-mode 可控变量实验证明了根因。最后我把所有头条数字重跑落盘，删掉不可复现的，修正了 harness 的两个 bug——端到端 22.5× 是 3 reps 复现的，不是纸面数字。
 
 面试官继续追问时，应优先展开：
 
