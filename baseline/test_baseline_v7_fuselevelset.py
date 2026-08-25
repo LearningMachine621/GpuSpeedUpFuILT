@@ -974,13 +974,26 @@ def _run_graph_mode(
 	# passed 2/2 without it, but keep both paths uniform).
 	t_d2h0 = time.perf_counter()
 	torch.cuda.empty_cache()
-	large_mask = workspace.fuse(params_list)
 	out_tile_dir = str(ROOT / "tile_masks")
 	os.makedirs(out_tile_dir, exist_ok=True)
 	large_out_dir = ROOT / "large_mask_results"
 	large_out_dir.mkdir(exist_ok=True)
-	params_cpu_list = [p.detach().cpu() for p in params_list]
-	large_mask_cpu = large_mask.detach().cpu()
+	if _USE_ASYNC_D2H:
+		# P0.3 ported into the graph branch (2026-08-26): pinned host buffers +
+		# non_blocking copies — params D2H overlaps the GPU fuse, one sync at end.
+		params_cpu_list = [torch.empty_like(p, device="cpu", pin_memory=True)
+		                   for p in params_list]
+		for p_gpu, p_pin in zip(params_list, params_cpu_list):
+			p_pin.copy_(p_gpu, non_blocking=True)
+		large_mask = workspace.fuse(params_list)
+		large_mask_cpu = torch.empty_like(large_mask, device="cpu", pin_memory=True)
+		large_mask_cpu.copy_(large_mask, non_blocking=True)
+		torch.cuda.synchronize()
+	else:
+		# original synchronous serial path (baseline; pre-2026-08-26 graph branch)
+		large_mask = workspace.fuse(params_list)
+		params_cpu_list = [p.detach().cpu() for p in params_list]
+		large_mask_cpu = large_mask.detach().cpu()
 	d2h_s = time.perf_counter() - t_d2h0
 	large_mask_path = str(large_out_dir / f"large_mask_v7graph_{large_mask_cpu.shape[1]}x{large_mask_cpu.shape[0]}.png")
 	save_executor = concurrent.futures.ThreadPoolExecutor(max_workers=8)

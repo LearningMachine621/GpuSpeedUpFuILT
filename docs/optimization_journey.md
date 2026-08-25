@@ -341,7 +341,11 @@ vs graph replay **29.16 ms/iter**（三连测 29.156/29.158/29.154，±0.01%）�
 21.6× 更慢**。根因：graph 分支的 D2H 是**同步串行 `.detach().cpu()`**（1.09-1.12 s），从未继承 P0.3 的
 async pinned 路径——replay 省下的 0.22 s 被吃掉还倒贴；早先"≈23.8×"推导借用了 eager 的 D2H 段，**已撤回**。
 nsys 全栈 trace（`v7_fullstack_graph`）证实 kernel 组成不变（FFT 34.1% / abs+pow 24.0% / pointwise 0.2%
-/ D2H 占 mem-op 90.5%）。**未实现的上升空间**：把 P0.3 async-D2H 移植进 graph 分支 ≈ 2.2-2.4 s（估）。
+/ D2H 占 mem-op 90.5%）。**当天补测（P0.3 async-D2H 移植进 graph 分支后）**：D2H 1.10→0.82-0.94 s（移植有效），全栈
+**2.670 → 2.465 s → 21.5×——与同日 eager（2.450 s → 21.6×）打平**；数值校验一致（Eval L2/EPE/loss 同
+eager）。估的 22-24× 也没站住：replay 省的 0.22 s 只占流水线 ~9%。**闭环结论（实测）：P0.1+P0.3 之后，
+graph capture 在 256-tile 端到端已无净收益**——它的价值在 launch 税占比更大的场景（如 1024-tile 的
+116.5 ms/iter replay）与确定性，不在当前配置的头条数字。
 **"全部有效加速"盘点**：栈内实测量级 = eager 21.6×（canonical 22.5×）；graph 全栈 19.9×（当前实现），
 P0.3 移植后才可能反超；v8 bigbuf（3.9× kernel 级）、P0.2（1.48× eval 相）未整合；P0.4/AMP/v4 为反例；
 v2 从未进现代复测表（小缺口）。

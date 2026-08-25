@@ -179,8 +179,11 @@ never in the headline table. Same idle GPU 7, 256 tiles × 20 iters:
   branch's D2H is synchronous serial `.detach().cpu()` (1.09-1.12 s) and
   never inherited P0.3's async pinned path; the 0.22 s replay saving is more
   than eaten. An earlier derived "≈23.8×" (borrowing the eager D2H segment)
-  is retracted. Unimplemented upside: port P0.3 async-D2H into the graph
-  branch (≈2.2-2.4 s est.)
+  is retracted. P0.3 async-D2H was then PORTED into the graph branch (same
+  day, gated by FUILT_USE_ASYNC_D2H): D2H 1.10→0.82-0.94 s, full-stack
+  **2.465 ± 0.047 s → 21.5× = parity with same-day eager (21.6×)**; the
+  22-24× estimate was also optimistic. Closed conclusion: after P0.1+P0.3,
+  graph capture adds ~nothing end-to-end at 256 tiles.
 - nsys trace committed: `outputs/nsys_traces/v7_fullstack_graph.nsys-rep`
   (derived: `nsys_reports/v7_fullstack_graph_*`): FFT chain **34.1%**
   (regular 17.3 + vector 16.8), abs+pow 24.0% (eval phase), fused pointwise

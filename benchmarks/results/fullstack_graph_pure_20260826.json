@@ -42,5 +42,40 @@
     "graph_fullstack_x": 19.8498127340824,
     "eager_fullstack_x": 21.632244897959183
   },
-  "finding": "Graph full-stack is MEASURED SLOWER than eager (19.9x vs 21.6x same-day): the graph branch's D2H is synchronous serial .detach().cpu() (1.09-1.12 s) and never inherited P0.3's async pinned path; the 27% loop saving (0.22 s) is more than eaten. The earlier derived ~23.8x assumed eager's D2H segment — RETRACTED. Porting P0.3 async-D2H into the graph branch is unimplemented upside (~2.2-2.4 s)."
+  "finding": "Graph full-stack is MEASURED SLOWER than eager (19.9x vs 21.6x same-day): the graph branch's D2H is synchronous serial .detach().cpu() (1.09-1.12 s) and never inherited P0.3's async pinned path; the 27% loop saving (0.22 s) is more than eaten. The earlier derived ~23.8x assumed eager's D2H segment — RETRACTED. Porting P0.3 async-D2H into the graph branch is unimplemented upside (~2.2-2.4 s).",
+  "async_d2h_port": {
+    "change": "P0.3 pattern ported into the graph branch (pinned + non_blocking, params D2H overlaps fuse, one sync), gated by FUILT_USE_ASYNC_D2H",
+    "reps_pure_s": [
+      2.532,
+      2.427,
+      2.435
+    ],
+    "mean_pure_s": 2.465,
+    "std": 0.047,
+    "breakdown_s": {
+      "setup": [
+        0.948,
+        0.963,
+        0.967
+      ],
+      "capture": [
+        0.065,
+        0.066,
+        0.064
+      ],
+      "replay_total": [
+        0.583,
+        0.583,
+        0.583
+      ],
+      "d2h_save": [
+        0.937,
+        0.814,
+        0.821
+      ]
+    },
+    "headline_x": 21.50060851926978,
+    "correctness": "Eval L2=10240.00 EPE=0.00 avg_loss=380989.7000 (matches eager)",
+    "conclusion": "D2H 1.10 -> 0.82-0.94 s (port works), full-stack 2.670 -> 2.465 s -> 21.5x: PARITY with same-day eager (2.450 s -> 21.6x). The 22-24x estimate was also optimistic — the replay saving (0.22 s) is ~9% of pipeline and the setup-segment accounting is heavier. Net: after P0.1+P0.3, graph capture adds ~nothing end-to-end at 256 tiles — now a measured, closed conclusion."
+  }
 }
