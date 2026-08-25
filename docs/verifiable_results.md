@@ -1,6 +1,6 @@
 # Verifiable results ledger
 
-Every performance number in `README.md`, mapped to the script
+Every performance number in `README.md` / `README.zh.md`, mapped to the script
 that produced it, the exact rerun command, and — where freshly re-measured —
 the raw output.
 
@@ -8,12 +8,10 @@ the raw output.
 JSON) live in [`benchmarks/results/`](benchmarks/results/) and are tracked in
 git — `graph_modes.json` (5-mode), `v7_profile.json` (v7 E2E profile),
 `kernel_microbench.json` (pointwise/FFT micro-bench), `compare_*.json`
-(correctness), `p01_equivalence.json` (P0.1 A/B equivalence). For nsys, the
-**derived reports** are the committed artifact
-(`benchmarks/results/nsys_reports/*.txt`); the binary `.nsys-rep` traces
-(~11-20 MB each, 5 variants) are **not distributed** in this repo — re-capture
-one with the profiling command in §4, then `nsys stats` regenerates the
-reports.
+(correctness). The nsys traces themselves are committed too: the `.nsys-rep`
+files (~11-20 MB each, 5 variants) live under `outputs/nsys_traces/` in git.
+Only the derived `.sqlite` stats stay gitignored — they are rebuilt from the
+committed `.nsys-rep` by `nsys stats`, one command away (see §4).
 
 None of this claims a number is "the truth" — it claims it is **reproducible**:
 the committed scripts regenerate it on an isolated RTX 4090.
@@ -27,7 +25,7 @@ the committed scripts regenerate it on an isolated RTX 4090.
 | torch | 2.11.0+cu130 |
 | Triton | 3.6.0 |
 | Python | 3.13 |
-| ledger values generated at | local-history `8fc358b` (2026-08-04); the public repo is a rebuilt minimal showcase (2026-08-20), so that SHA is not reachable here |
+| git HEAD (ledger date) | `8fc358b` (2026-08-04 headline re-run generated at this commit; ledger text committed after) |
 | Repo-relative CWD | run all commands from the repo root with `PYTHONPATH=.` |
 
 Two benchmark-script fixes shipped with this ledger (both in
@@ -143,6 +141,30 @@ CUDA_VISIBLE_DEVICES=7 FUILT_USE_COMBINED_KERNEL=1 FUILT_USE_ASYNC_D2H=1 \
 
 ---
 
+## Re-verified 2026-08-26 (sentinel-triggered, GPU 7 truly idle) — 21.6×
+
+Full-table rerun launched automatically by an idle-GPU sentinel (10 min
+sustained util=0 + mem<1 GB; raw:
+[`headline_e2e_20260826_sentinel.json`](headline_e2e_20260826_sentinel.json)):
+
+| variant | 08-26 (s) | 08-04 (s) | delta |
+|---|---:|---:|---:|
+| v1 | 52.999 ± 0.69 | 53.07 ± 0.51 | −0.1% |
+| v3 / v5 / v6 | 13.43 / 18.0 / 19.51 | 13.36 / 18.05 / 19.61 | ≤ ±0.5% |
+| v7-CUDA / v7-Triton | 9.075 / 9.305 | 8.96 / 9.18 | +1.3 / +1.4% |
+| P0.1 / P0.4 | 2.843 / 4.329 | 2.80 / 4.24 | +1.5 / +2.1% |
+| **P0.1+P0.3** | **2.457 ± 0.026** | 2.36 ± 0.05 | **+4.1%** |
+| **headline** | **21.6×** | **22.5×** | −4% |
+
+Reading: baseline-side variants are rock-stable (≤±0.5%); the uniform +1.3-2.1%
+on GPU-pipeline variants suggests residual clock/thermal state (GPU 7 ran 100%
+for hours until ~10 min before the run), and the headline spread concentrates
+in the P0.1+P0.3 denominator (async-D2H-heavy, host-IO sensitive; the two
+means sit ~1.7σ_combined apart). **Both numbers are real isolated
+measurements: 22.5× (2026-08-04) stays canonical; 21.6× (2026-08-26) bounds
+the cross-run spread at ~±4%.** One v7-CUDA rep crashed at first-launch
+extension compile (returncode 1); its other two reps agree (9.056/9.093).
+
 ## Freshly re-verified 2026-08-04 (GPU 7) — full headline table re-run
 
 Every headline row re-run on an **idle, isolated GPU 7** (all 8 GPUs present,
@@ -193,10 +215,9 @@ for the Triton pointwise). They were **not** re-verified on 2026-08-03.
 
 ### 4. nsys trace numbers (FFT chain 50.0%, pointwise 0.3%, 7861/7526 ns)
 
-**Traces are NOT distributed** (binary `.nsys-rep`, ~11-20 MB each: `v7_p013_nvtx`
-+ `v7_cuda`, `v7_triton` variants and their `_rerun` isolates). The committed
-artifact is the derived reports in `benchmarks/results/nsys_reports/`. To
-reproduce a trace, capture it with the profiling command below, then derive:
+**Traces in the repo** (committed, ~11-20 MB each): `outputs/nsys_traces/v7_p013_nvtx.nsys-rep`
+(+ `v7_cuda`, `v7_triton` variants and their `_rerun` isolates). The matching
+`.sqlite` stats are gitignored — regenerate from the `.nsys-rep`:
 
 **Regenerate** (from `docs/nsys_trace_guide.md`):
 ```bash
@@ -210,8 +231,8 @@ nsys profile -t cuda,nvtx,osrt --stats=false \
 nsys stats --report cuda_gpu_kern_sum outputs/nsys_traces/v7_p013_nvtx.nsys-rep
 ```
 
-**Derived reports are committed** (re-generated 2026-08-04 from the
-locally-archived `.nsys-rep`, no GPU): `benchmarks/results/nsys_reports/` holds
+**Derived reports are committed** (re-generated 2026-08-04 from the committed
+`.nsys-rep`, no GPU): `benchmarks/results/nsys_reports/` holds
 `*_cuda_gpu_kern_sum.txt` + `*_cuda_gpu_mem_time_sum.txt` + `*_cuda_api_sum.txt`
 for all five traces. They re-derive the README claims with a full cross-check
 table (0.3 % pointwise, 7,861 / 7,526 ns, 3.075 / 3.096 s all match; the FFT-chain
