@@ -172,10 +172,15 @@ never in the headline table. Same idle GPU 7, 256 tiles × 20 iters:
 
 - per-iter loop: eager 40.3 ms (stage table 0.805 s/20) vs graph replay
   **29.16 ms/iter** (29.156/29.158/29.154 across 3 runs, ±0.01%) → **−27%**
-- pure-pipeline equivalent ≈ 2.23 s (derived: non-loop stages taken from the
-  eager run — graph mode prints no same-metric line) → **≈ 23.8× vs v1**
-  (canonical eager 22.5×); the loop is now only ~31% of pure pipeline, so
-  graph buys ~5% end-to-end — P0.1/P0.3 already consumed most of its room
+- pure-pipeline MEASURED after adding same-metric stage accounting to the
+  graph branch (3 reps, [`fullstack_graph_pure_20260826.json`]
+  (fullstack_graph_pure_20260826.json)): **2.670 ± 0.004 s → 19.9× vs v1**
+  — SLOWER than same-day eager (2.450 s → 21.6×). Root cause: the graph
+  branch's D2H is synchronous serial `.detach().cpu()` (1.09-1.12 s) and
+  never inherited P0.3's async pinned path; the 0.22 s replay saving is more
+  than eaten. An earlier derived "≈23.8×" (borrowing the eager D2H segment)
+  is retracted. Unimplemented upside: port P0.3 async-D2H into the graph
+  branch (≈2.2-2.4 s est.)
 - nsys trace committed: `outputs/nsys_traces/v7_fullstack_graph.nsys-rep`
   (derived: `nsys_reports/v7_fullstack_graph_*`): FFT chain **34.1%**
   (regular 17.3 + vector 16.8), abs+pow 24.0% (eval phase), fused pointwise

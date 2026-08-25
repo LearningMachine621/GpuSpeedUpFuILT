@@ -308,7 +308,7 @@ def _compute_pointwise(
 
 	pointwise:
 	  "auto"    -> env-driven (FUILT_USE_TRITON_POINTWISE); backward compatible
-	  "unfused" -> pure-PyTorch discrete ops (v5/v6 baseline; ~5 launches, no fused kernel)
+	  "unfused" -> pure-PyTorch discrete ops (v5/v6 baseline; 10 launches measured, no fused kernel)
 	  "cuda"    -> hand-written fused CUDA kernel (fused_pointwise_kernel.cu)
 	  "triton"  -> Triton port (triton_fused_pointwise.py)
 
@@ -900,11 +900,13 @@ def _run_graph_mode(
 	if litho_cfg_path is None:
 		litho_cfg_path = str(CONFIG_DIR / "lithosimple.txt")
 
+	t_setup0 = time.perf_counter()
 	ctx = setup_v7_context(
 		oas_dir, multiplier=multiplier, pointwise=pointwise,
 		learning_rate=learning_rate, target_layers=target_layers,
 		litho_cfg_path=litho_cfg_path,
 	)
+	setup_s = time.perf_counter() - t_setup0
 	params_list = ctx["params_list"]
 	target_cuda_list = ctx["target_cuda_list"]
 	workspace = ctx["workspace"]
@@ -970,6 +972,7 @@ def _run_graph_mode(
 	# Same peak-step protection as the eager path: return the allocator's free
 	# blocks to the driver before the full-canvas fuse (defensive — graph mode
 	# passed 2/2 without it, but keep both paths uniform).
+	t_d2h0 = time.perf_counter()
 	torch.cuda.empty_cache()
 	large_mask = workspace.fuse(params_list)
 	out_tile_dir = str(ROOT / "tile_masks")
@@ -978,6 +981,7 @@ def _run_graph_mode(
 	large_out_dir.mkdir(exist_ok=True)
 	params_cpu_list = [p.detach().cpu() for p in params_list]
 	large_mask_cpu = large_mask.detach().cpu()
+	d2h_s = time.perf_counter() - t_d2h0
 	large_mask_path = str(large_out_dir / f"large_mask_v7graph_{large_mask_cpu.shape[1]}x{large_mask_cpu.shape[0]}.png")
 	save_executor = concurrent.futures.ThreadPoolExecutor(max_workers=8)
 	for i, p_cpu in enumerate(params_cpu_list):
@@ -996,6 +1000,9 @@ def _run_graph_mode(
 		"final_loss": last_avg_loss,
 		"graph_capture_s": capture_s,
 		"graph_replay_ms_per_iter": replay_ms_per_iter,
+		"graph_setup_s": setup_s,
+		"graph_d2h_save_s": d2h_s,
+		"graph_pure_pipeline_s": setup_s + capture_s + replay_s + d2h_s,
 		"eval_l2": float(np.mean(l2s)),
 		"eval_epe": float(np.mean(epes)),
 		"eval_time_s": t_eval,
@@ -1083,6 +1090,10 @@ def main() -> None:
 		print(f"🔥 峰值显存 (Peak VRAM): {result['peak_vram_mb']:.2f} MB")
 		print(f"🎬 图捕获耗时 (one-shot, amortized): {result['graph_capture_s']:.3f} s")
 		print(f"⚡ Graph replay: {result['graph_replay_ms_per_iter']:.3f} ms/iter")
+		print(f"💡 流水线总纯耗时 (graph, 剔除Eval): {result['graph_pure_pipeline_s']:.3f} s "
+		      f"[setup {result['graph_setup_s']:.3f} + capture {result['graph_capture_s']:.3f} "
+		      f"+ replay {result['graph_replay_ms_per_iter'] * result['iterations'] / 1000:.3f} "
+		      f"+ d2h {result['graph_d2h_save_s']:.3f}]")
 		print(f"📊 Eval L2={result['eval_l2']:.2f}, EPE={result['eval_epe']:.2f} | avg_loss={result['final_loss']:.4f}")
 		print(f"⏱️ 端到端总耗时: {total_s:.3f} s")
 		print("=" * 50 + "\n")

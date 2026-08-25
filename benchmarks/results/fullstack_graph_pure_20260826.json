@@ -1,0 +1,46 @@
+{
+  "script": "baseline/test_baseline_v7_fuselevelset.py (graph branch, patched with pure-pipeline accounting)",
+  "date": "2026-08-26 04:0x",
+  "gpu": "NVIDIA GeForce RTX 4090 (GPU 7, idle)",
+  "config": {
+    "tiles": 256,
+    "iters": 20,
+    "env": "FUILT_USE_COMBINED_KERNEL=1 FUILT_USE_ASYNC_D2H=1 FUILT_USE_GRAPH=1"
+  },
+  "reps_pure_s": [
+    2.674,
+    2.667,
+    2.669
+  ],
+  "mean_pure_s": 2.67,
+  "std": 0.004,
+  "breakdown_s": {
+    "setup": [
+      0.901,
+      0.92,
+      0.93
+    ],
+    "capture": [
+      0.065,
+      0.063,
+      0.064
+    ],
+    "replay_total": [
+      0.583,
+      0.584,
+      0.583
+    ],
+    "d2h_save": [
+      1.124,
+      1.1,
+      1.091
+    ]
+  },
+  "comparison_same_day": {
+    "eager_p01p03_pure_s": 2.45,
+    "v1_s": 52.999,
+    "graph_fullstack_x": 19.8498127340824,
+    "eager_fullstack_x": 21.632244897959183
+  },
+  "finding": "Graph full-stack is MEASURED SLOWER than eager (19.9x vs 21.6x same-day): the graph branch's D2H is synchronous serial .detach().cpu() (1.09-1.12 s) and never inherited P0.3's async pinned path; the 27% loop saving (0.22 s) is more than eaten. The earlier derived ~23.8x assumed eager's D2H segment — RETRACTED. Porting P0.3 async-D2H into the graph branch is unimplemented upside (~2.2-2.4 s)."
+}

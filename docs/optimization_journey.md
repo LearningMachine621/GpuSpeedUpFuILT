@@ -336,12 +336,15 @@ batch 扩到 1024 tile，撞上 24GB 显存极限，**OOM 2/3**。
 
 **2026-08-26 全栈补测（graph capture 叠加，此前从未进头条数字）**：eager 每 iter 循环 40.3 ms（stage 表）
 vs graph replay **29.16 ms/iter**（三连测 29.156/29.158/29.154，±0.01%）→ 循环节省 27%；但循环节只占纯
-流水线 ~31%（H2D 30% + D2H 38% 是大头）→ 全栈纯 ≈ 2.23 s ≈ **23.8×**（推导值：graph 模式不打印同口径
-纯耗时，非循环段按 eager 同段代入）。nsys 全栈 trace（`v7_fullstack_graph`，已入库）证实剩余格局不变：
-FFT 链 34.1% / abs+pow 24.0%（eval 相）/ pointwise 0.2% / **D2H 占 mem-op 90.5%**——graph 的收益被
-P0.1/P0.3 提前吃掉大半，新瓶颈是 IO 段。**"全部有效加速"盘点**：头条链（22.5×）+ graph（≈23.8× 上限）
-为栈内全部；v8 bigbuf（3.9× kernel 级）、P0.2（1.48× eval 相）未整合进主流水线；P0.4/AMP/v4 为反例；
-v2 从未进现代复测表（被后续吸收，小缺口）。
+流水线 ~31%（H2D 30% + D2H 38% 是大头）。**实测（graph 分支补同口径分段计时后，3 reps，
+`fullstack_graph_pure_20260826.json`）：全栈纯 = 2.670 ± 0.004 s → 52.999/2.670 = 19.9×——比 eager 的
+21.6× 更慢**。根因：graph 分支的 D2H 是**同步串行 `.detach().cpu()`**（1.09-1.12 s），从未继承 P0.3 的
+async pinned 路径——replay 省下的 0.22 s 被吃掉还倒贴；早先"≈23.8×"推导借用了 eager 的 D2H 段，**已撤回**。
+nsys 全栈 trace（`v7_fullstack_graph`）证实 kernel 组成不变（FFT 34.1% / abs+pow 24.0% / pointwise 0.2%
+/ D2H 占 mem-op 90.5%）。**未实现的上升空间**：把 P0.3 async-D2H 移植进 graph 分支 ≈ 2.2-2.4 s（估）。
+**"全部有效加速"盘点**：栈内实测量级 = eager 21.6×（canonical 22.5×）；graph 全栈 19.9×（当前实现），
+P0.3 移植后才可能反超；v8 bigbuf（3.9× kernel 级）、P0.2（1.48× eval 相）未整合；P0.4/AMP/v4 为反例；
+v2 从未进现代复测表（小缺口）。
 
 ### 10.2 反例排查
 
