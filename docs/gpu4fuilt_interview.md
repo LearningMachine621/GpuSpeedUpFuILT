@@ -22,7 +22,7 @@
 
 | # | 实验 | 一句话结论 | 关键数字 | 触发问题 |
 |---|---|---|---|---|
-| A1 | v7 融合 pointwise（Triton） | 实测 10 算子 eager 链 → 1 kernel（torch.profiler） | 49.2→23.4µs（2.1×）；in-pipeline 仅 **0.3%** GPU 时间 | "你的 Triton kernel 做了什么" |
+| A1 | v7 融合 pointwise（Triton） | 实测 10 算子 eager 链 → 1 kernel（torch.profiler） | 90.9→29.3µs wall（3.1×）/ GPU-busy 5.8×；in-pipeline 仅 **0.3%** GPU 时间 | "你的 Triton kernel 做了什么" |
 | A2 | P0.3 async D2H | 对称地把 D2H 也藏进计算 | 2.80→2.36s；D2H 占 mem-op 时间 **91.4%** | "H2D 优化了 D2H 呢" |
 | A3 | v5/v6 graph 退化 | 捕获区太细（5120 次小 launch），graph 反而慢 | v5 18.05 / v6 19.61 vs v3 13.36 | "为什么不用 CUDA Graph" |
 | A4 | **P0.4 batch H2D 失败** | "显然快"的优化反而回退——np.stack 引入 2GB 额外拷贝 | 4.24s（12.5×，**回退**） | "有没有失败过的优化" |

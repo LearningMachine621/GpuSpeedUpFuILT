@@ -35,6 +35,34 @@ def micro_expr():
     return grad
 
 
+def bench_us(fn, reps=200):
+    """Wall time per call (µs) — CUDA events around a reps-loop, like the
+    kernel-microbench harness. Includes host dispatch (dominates Triton)."""
+    for _ in range(5):
+        fn()
+    torch.cuda.synchronize()
+    s = torch.cuda.Event(enable_timing=True)
+    e = torch.cuda.Event(enable_timing=True)
+    st = torch.cuda.current_stream()
+    s.record(st)
+    for _ in range(reps):
+        fn()
+    e.record(st)
+    torch.cuda.synchronize()
+    return s.elapsed_time(e) / reps * 1000
+
+
+def gpu_busy_us(fn):
+    """Pure GPU busy time for ONE call (torch.profiler self device time)."""
+    fn()
+    torch.cuda.synchronize()
+    with profile(activities=[ProfilerActivity.CUDA]) as prof:
+        fn()
+        torch.cuda.synchronize()
+    return sum(e.self_device_time_total for e in prof.key_averages()
+               if "Memcpy" not in e.key and "memset" not in e.key.lower())
+
+
 def count(fn, tag):
     fn()  # warmup
     torch.cuda.synchronize()
@@ -54,11 +82,22 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("--out-json", type=str, default="")
     args = p.parse_args()
-    n_unfused = count(lambda: _compute_pointwise(a, t, "unfused", 0.5, 1.0), "unfused (production v5/v6 eager chain)")
-    n_micro = count(micro_expr, "micro-bench expression (bench_pointwise_torch)")
-    n_triton = count(lambda: _compute_pointwise(a, t, "triton", 0.5, 1.0), "triton fused (production)")
-    n_cuda = count(lambda: _compute_pointwise(a, t, "cuda", 0.5, 1.0), "cuda fused (reference)")
+    cases = {
+        "unfused_10op_production": lambda: _compute_pointwise(a, t, "unfused", 0.5, 1.0),
+        "micro_8op_expression": micro_expr,
+        "triton_fused": lambda: _compute_pointwise(a, t, "triton", 0.5, 1.0),
+        "cuda_fused": lambda: _compute_pointwise(a, t, "cuda", 0.5, 1.0),
+    }
+    n_unfused = count(cases["unfused_10op_production"], "unfused (production v5/v6 eager chain)")
+    n_micro = count(cases["micro_8op_expression"], "micro-bench expression (bench_pointwise_torch)")
+    n_triton = count(cases["triton_fused"], "triton fused (production)")
+    n_cuda = count(cases["cuda_fused"], "cuda fused (reference)")
     print(f"\nSUMMARY: unfused={n_unfused}  micro_expr={n_micro}  triton_fused={n_triton}  cuda_fused={n_cuda}")
+    timing = {k: {"wall_us": round(bench_us(f), 2), "gpu_busy_us": round(gpu_busy_us(f), 2)}
+              for k, f in cases.items()}
+    print("\nTIMING (1024x1024 fp32, 2026-08-25 host state):")
+    for k, v in timing.items():
+        print(f"   {k:<26} wall {v['wall_us']:7.2f} us   GPU-busy {v['gpu_busy_us']:6.2f} us")
     if args.out_json:
         def _c():
             try:
@@ -76,6 +115,7 @@ if __name__ == "__main__":
                         "microbench_expression": n_micro,
                         "triton_fused": n_triton,
                         "cuda_fused": n_cuda},
+            "timing_1024x1024_fp32": timing,
             "conclusion": ("The fused kernel replaces the production eager chain of "
                             f"{10} ATen launches with 1 kernel; earlier doc claims of "
                             "'~5' (README) and '8' (microbench expression) were estimates "

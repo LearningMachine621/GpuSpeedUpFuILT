@@ -86,14 +86,14 @@ CUDA 版 `fused_pointwise_kernel.cu` 的 drop-in 替换）：每个元素算
 | 维度 | Before（PyTorch eager） | After（Triton fused） | 证据 |
 |---|---|---|---|
 | kernel 数 | **10 个** elementwise kernel（生产 v5/v6 链实测：sub, mul, sigmoid, sub, rsub, mul×5——含 steepness 链与 diff_sq；中间量逐个落 HBM） | **1 个** kernel（2 输入 2 输出，中间量留寄存器） | torch.profiler 实测（`pointwise_kernel_count.json`）；融合版 `triton_fused_pointwise.py:27` |
-| 耗时（1024² fp32，CUDA events，warmup 后 100 reps） | 49.2 µs | **23.4 µs（2.10×）** | `kernel_microbench.json`（`pointwise_torch_ms` / `pointwise_triton_ms`） |
+| 耗时（1024² fp32，生产 10-op 链 vs 融合，2026-08-25） | 90.9 µs wall / 34.9 µs GPU-busy | **29.3 µs wall（3.1×）/ 6.1 µs GPU-busy（5.8×）** | `pointwise_kernel_count.json`（wall 两次独立运行 2.3–3.1×，eager 分发对主机状态敏感；旧 8-op microbench 口径 49.2→23.4=2.1× 见 `kernel_microbench.json`） |
 | DRAM 流量（**推算**，非实测；4 MiB/tensor） | 读 56 + 写 40 = **96 MiB** | 读 8 + 写 8 = **16 MiB**（**6×↓**） | 按生产链 10 步逐个"读入+写出"累加 vs 单趟 |
 | launch 开销 | 8 次 launch ×（trace 段 `cudaLaunchKernel` avg 5.3 µs / med 4.3 µs） | **1 次** | `v7_triton_rerun_cuda_api_sum.txt` |
 | 真实流水线里（nsys，in-pipeline） | —（v1 的 eager 链没有单独 trace） | **7,861 ns** avg / 7,840 med，整类只占 **0.3%** GPU 时间；CUDA 版 7,526 ns 几乎持平 | `v7_triton_rerun_cuda_gpu_kern_sum.txt`（对账表 ✅） |
 
-**为什么实测只有 2.1× 而流量推算是 6×**：eager 链的工作集（~8×4 MiB）能命中 4090 的 L2，
-中间量并非每次都真落到 HBM——所以流量是理论下界、时间是含 L2 命中的实测。方向一致，数量级解释得通，
-这也是"没有 NCU 就不把推算说成实测"的原因。
+**三个比值的收敛关系**：流量推算 6×、纯 GPU 时间 5.8×（34.9→6.1µs）、wall 3.1×（90.9→29.3µs）。
+GPU 时间比与流量比收敛（融合同时消掉了 per-kernel 尾部开销，略超流量比也合理）；wall 比值最低是因为
+Triton 的 Python 分发占其 wall 的大头（29.3 wall vs 6.1 GPU）——这也是"隔离 wall ≠ 纯 kernel 能力"的又一例。
 
 ### 2.2 第二个数据点：fuse4（v8 bigbuf，`v8_ablation.json`，canvas 4096²）
 

@@ -50,7 +50,7 @@
 - 瓶颈迁移链：H2D 占 init 85% → launch 税（trace 段 ~22.9 万次 kernel launch / 1.10 s CPU API）→
   FFT 链 50.0% GPU 时间 → IFFT 循环（1.27 ms/tile-iter，= 前向 fft2 的 43×）
 - P0.1 后 trace 复核：复数乘 12.3% → 0.4%，FFT 链 50.0% → 33.9%
-- fused pointwise：49.2 → 23.4 µs（2.1×），DRAM 流量按形状推算 96 → 16 MiB/tile（6×↓，无 NCU 实测）
+- fused pointwise：生产 10-op 链 90.9 → 29.3 µs（**3.1×**，wall）；纯 GPU 时间 34.9 → 6.1 µs（**5.8×**）；DRAM 按形状推算 96 → 16 MiB/tile（6×↓，无 NCU 实测）
 - fuse4（v8 bigbuf，4096² canvas）：eager 179.8 → Triton 46.0 µs（3.9×）；手写 CUDA 29.2 µs 为上限参考
 - 扩展性：1024 tiles 8.31 s，per-tile 延迟 flat（+1%），峰值 VRAM 23337 MB（24GB 的 95%）
 
