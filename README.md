@@ -29,7 +29,7 @@
 |---|---|---|
 | 1 | **算法级等价重写（P0.1）**：用 IFFT 线性性把每 tile 每 iter 的 24 次 `ifft2` 合并成 1 次（`Σ s·IFFT(Xₖ) = IFFT(Σ s·Xₖ)`，合并核在 init 预计算一次、常驻显存），数学严格等价、零新 kernel | 端到端 **3.20×**，热点阶段 10.5× |
 | 2 | **数据流编排**：pinned host memory + async + stream 把 H2D/D2H 藏进计算（DMA 与 SM 是不同引擎；async 的前提是 pinned） | H2D overlap **3.97×**；async D2H 再 1.19× |
-| 3 | **融合 kernel 与生产选型**：Triton 融合 pointwise（8 算子 eager 链 → 1 kernel）、v8 bigbuf 地址合并（地址可推导 → 合并访问 + graph friendly）；以"端到端 +2.5%、默认 CUDA-Graph-safe、少 91 行 CUDA 样板"选定 Triton 为生产路径 | kernel 延迟 **2.1×**，fuse4 **3.9×** |
+| 3 | **融合 kernel 与生产选型**：Triton 融合 pointwise（实测 10 算子 eager 链 → 1 kernel，`pointwise_kernel_count.json`）、v8 bigbuf 地址合并（地址可推导 → 合并访问 + graph friendly）；以"端到端 +2.5%、默认 CUDA-Graph-safe、少 91 行 CUDA 样板"选定 Triton 为生产路径 | kernel 延迟 **2.1×**，fuse4 **3.9×** |
 | 4 | **CUDA Graph 捕获 bug 定位与修复**：手写 kernel 裸 `<<<>>>` 走默认流，capture 时被静默跳过（**错而不报错**）；4 处改 `getCurrentCUDAStream()` 后用 5-mode 可控变量实验证明因果，graph capture 回填主流水线 | mode3 loss-rel **1.02 FAIL** → mode5 **0.00 PASS** |
 | 5 | **证据工程**：头条数字全表重跑落盘（3 reps）、删除不可复现声明、修正 harness 两个测量 bug；每个数字 = committed 脚本 + raw JSON + 一条命令 | 22.5× 可复现 |
 
@@ -50,7 +50,7 @@
 - 瓶颈迁移链：H2D 占 init 85% → launch 税（trace 段 ~22.9 万次 kernel launch / 1.10 s CPU API）→
   FFT 链 50.0% GPU 时间 → IFFT 循环（1.27 ms/tile-iter，= 前向 fft2 的 43×）
 - P0.1 后 trace 复核：复数乘 12.3% → 0.4%，FFT 链 50.0% → 33.9%
-- fused pointwise：49.2 → 23.4 µs（2.1×），DRAM 流量按形状推算 76 → 16 MiB/tile（4.75×↓，无 NCU 实测）
+- fused pointwise：49.2 → 23.4 µs（2.1×），DRAM 流量按形状推算 96 → 16 MiB/tile（6×↓，无 NCU 实测）
 - fuse4（v8 bigbuf，4096² canvas）：eager 179.8 → Triton 46.0 µs（3.9×）；手写 CUDA 29.2 µs 为上限参考
 - 扩展性：1024 tiles 8.31 s，per-tile 延迟 flat（+1%），峰值 VRAM 23337 MB（24GB 的 95%）
 
@@ -69,7 +69,7 @@
                                                    ▼
                                         ┌──────────────────┐
                                         │ fused_pointwise  │  ← Triton kernel
-                                        │ _grad_loss       │   （8 算子 → 1）
+                                        │ _grad_loss       │   （10 算子 → 1，实测）
                                         └──────────┬───────┘
                                                    │ grad + diff²
                                  ┌─────────────────┴─────────────────┐

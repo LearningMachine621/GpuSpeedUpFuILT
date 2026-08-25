@@ -1,0 +1,14 @@
+{
+  "script": "baseline/count_pointwise_kernels.py",
+  "date": "2026-08-25 15:32:03",
+  "git_commit": "6bd37cd",
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "method": "torch.profiler CUDA kernel events, 1024x1024 fp32, warmup + 1 call",
+  "counts": {
+    "unfused_production_v5v6_chain": 10,
+    "microbench_expression": 8,
+    "triton_fused": 1,
+    "cuda_fused": 1
+  },
+  "conclusion": "The fused kernel replaces the production eager chain of 10 ATen launches with 1 kernel; earlier doc claims of '~5' (README) and '8' (microbench expression) were estimates that undercounted the steepness muls and diff_sq."
+}

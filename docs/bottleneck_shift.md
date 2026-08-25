@@ -54,7 +54,7 @@ After
 | CPU/H2D | 256× H2D 占 **H2D_Init 阶段** 85%（README 原话口径，不是"占总时间"） | README §P0.5 |
 | CPU/H2D | 即便到 v7（pre-P0.3），trace 段内 `cudaMemcpyAsync` 59,597 次 / 1.448 s（30.9% API 时间）；`cudaStreamSynchronize` 58,573 次 / 1.831 s（39.1%）——CPU 在"等" | `v7_triton_rerun_cuda_api_sum.txt` |
 | CPU/H2D | mem-op 时间里 **D2H 占 91.4%**（0.966 s vs H2D 0.090 s）——这正是 P0.3 async D2H 要藏掉的东西 | `v7_triton_rerun_cuda_gpu_mem_time_sum.txt` |
-| pointwise launch | eager 链每 tile ~8 个 elementwise kernel（`sub, mul, sigmoid, sub, rsub, mul, mul, mul`，按 `bench_pointwise_torch` 表达式数出，代码可查）；整个 trace 段 ~22.9 万次 kernel launch、~1.10 s CPU API 时间 | `run_benchmark_matrix.py:495` + `v7_triton_rerun_cuda_api_sum.txt` |
+| pointwise launch | eager 链每 tile **实测 10 个** elementwise kernel（torch.profiler 计数，`pointwise_kernel_count.json`；早期文档写 8——那是 microbench 简化表达式的数，生产链多出 steepness 乘法与 diff_sq；README 的 ~5 是更早粗估）；整个 trace 段 ~22.9 万次 kernel launch、~1.10 s CPU API 时间 | `baseline/count_pointwise_kernels.py` + `v7_triton_rerun_cuda_api_sum.txt` |
 | FFT | v7 trace GPU 时间 3.096 s 中 FFT 链 **50.0%**：`regular_fft` 19.5% + `vector_fft` 18.2% + 复数乘 `BinaryFunctor<c10::complex>` 12.3%（30,768 次，每 tile-iter 24 次地喂 IFFT） | `v7_triton_rerun_cuda_gpu_kern_sum.txt` + `nsys_reports/README.md` 对账表 |
 
 ### 1.2 After："IFFT becomes dominant" 的证据
@@ -85,13 +85,13 @@ CUDA 版 `fused_pointwise_kernel.cu` 的 drop-in 替换）：每个元素算
 
 | 维度 | Before（PyTorch eager） | After（Triton fused） | 证据 |
 |---|---|---|---|
-| kernel 数 | **8 个** elementwise kernel（`sub→mul→sigmoid→sub→rsub→mul→mul→mul`，中间量逐个落 HBM） | **1 个** kernel（2 输入 2 输出，中间量留寄存器） | 算子表达式 `run_benchmark_matrix.py:495`；融合版 `triton_fused_pointwise.py:27` |
+| kernel 数 | **10 个** elementwise kernel（生产 v5/v6 链实测：sub, mul, sigmoid, sub, rsub, mul×5——含 steepness 链与 diff_sq；中间量逐个落 HBM） | **1 个** kernel（2 输入 2 输出，中间量留寄存器） | torch.profiler 实测（`pointwise_kernel_count.json`）；融合版 `triton_fused_pointwise.py:27` |
 | 耗时（1024² fp32，CUDA events，warmup 后 100 reps） | 49.2 µs | **23.4 µs（2.10×）** | `kernel_microbench.json`（`pointwise_torch_ms` / `pointwise_triton_ms`） |
-| DRAM 流量（**推算**，非实测；4 MiB/tensor） | 读 44 + 写 32 = **76 MiB** | 读 8 + 写 8 = **16 MiB**（**4.75×↓**） | 按上表 8 步逐个"读入+写出"累加 vs 单趟 |
+| DRAM 流量（**推算**，非实测；4 MiB/tensor） | 读 56 + 写 40 = **96 MiB** | 读 8 + 写 8 = **16 MiB**（**6×↓**） | 按生产链 10 步逐个"读入+写出"累加 vs 单趟 |
 | launch 开销 | 8 次 launch ×（trace 段 `cudaLaunchKernel` avg 5.3 µs / med 4.3 µs） | **1 次** | `v7_triton_rerun_cuda_api_sum.txt` |
 | 真实流水线里（nsys，in-pipeline） | —（v1 的 eager 链没有单独 trace） | **7,861 ns** avg / 7,840 med，整类只占 **0.3%** GPU 时间；CUDA 版 7,526 ns 几乎持平 | `v7_triton_rerun_cuda_gpu_kern_sum.txt`（对账表 ✅） |
 
-**为什么实测只有 2.1× 而流量推算是 4.75×**：eager 链的工作集（~5×4 MiB）能命中 4090 的 L2，
+**为什么实测只有 2.1× 而流量推算是 6×**：eager 链的工作集（~8×4 MiB）能命中 4090 的 L2，
 中间量并非每次都真落到 HBM——所以流量是理论下界、时间是含 L2 命中的实测。方向一致，数量级解释得通，
 这也是"没有 NCU 就不把推算说成实测"的原因。
 
@@ -108,7 +108,7 @@ CUDA 版 `fused_pointwise_kernel.cu` 的 drop-in 替换）：每个元素算
 ### 2.3 这段故事的诚实边界
 
 - "DRAM traffic ↓" 是**形状推算**（仓库无 NCU 数据）；实测支撑是同一负载的耗时下降（49.2→23.4 µs）。
-- "8 kernels" 是从 committed 代码的表达式数的，不是 trace 数出来的（v1 时代的 eager 链没有单独 trace）。
+- kernel 数已从"数表达式"升级为 torch.profiler 实测（2026-08-25，`pointwise_kernel_count.json`）：生产链 10、microbench 表达式 8、融合后 1。
 - 隔离 launch 延迟是另一个测量域：Triton 单次 24.5 µs vs CUDA 8.1 µs（Python 分发开销），
   但 in-pipeline 重叠后 GPU 侧 7,861 vs 7,526 ns 几乎持平——**不要拿两个域的数字互相否定**（journey §11）。
 - Triton 额外红利：launch 自带当前流，**默认 CUDA-Graph-safe**；手写 CUDA 要显式
