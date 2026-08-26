@@ -165,6 +165,18 @@ measurements: 22.5× (2026-08-04) stays canonical; 21.6× (2026-08-26) bounds
 the cross-run spread at ~±4%.** One v7-CUDA rep crashed at first-launch
 extension compile (returncode 1); its other two reps agree (9.056/9.093).
 
+**Cross-GPU follow-up (08-26b, [`headline_e2e_20260826_full2.json`](headline_e2e_20260826_full2.json),
+GPU 4, host fully idle for hours)**: headline **21.51x**; p01p03 = 2.444 s —
+**within 0.5% of the GPU-7 sentinel run (2.457)**. Two conclusions:
+(1) the morning +4.1% is **not** GPU thermal/clock residue (an unhammered
+different card reproduces it) — it is a **systematic host-side shift in the
+async-D2H variants only**: p01p03 +3.7% and p04 +2.3% are the *only* variants
+drifting vs 08-04 (both gated by `FUILT_USE_ASYNC_D2H`), while v1/v3/v5/v6/
+v7/p01 all sit within 1.8% (p01 is actually faster). Cause between 08-04 and
+08-26 not identified from these runs (host/driver state, pinned-page path) —
+follow-up would be a stage-split/trace comparison of the D2H_Save stage.
+(2) cross-card parity confirms the cards are interchangeable for this bench.
+
 ### 6. Full-stack (P0.1 + P0.3 + graph capture) — first measured 2026-08-26
 
 The headline number is the **eager** pipeline; `FUILT_USE_GRAPH=1` on top was
