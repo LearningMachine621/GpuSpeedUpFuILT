@@ -1,0 +1,703 @@
+{
+  "script": "baseline/rerun_headline.py",
+  "date": "2026-08-26 04:03:50",
+  "git_commit": "727fcb8",
+  "gpu": {
+    "index": 4,
+    "name": "NVIDIA GeForce RTX 4090",
+    "vram_total_mb": 24564,
+    "util_pct_at_start": 0,
+    "used_mb": 1
+  },
+  "cuda_visible_devices": "4",
+  "env": {
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0",
+    "triton": "3.6.0",
+    "python": "3.13.5"
+  },
+  "args": {
+    "iters": 20,
+    "warmup": 10,
+    "multiplier": 16,
+    "mode": "pytorch_fft",
+    "tiles_dir": "/data/lyj/FuILT/tiles_from_patch",
+    "repeats": 3,
+    "eager": true
+  },
+  "note": "Independent re-run of the README headline table. Each variant is the existing baseline/test_baseline_v*.py script launched via subprocess; timing lines are parsed from stdout. v5 measured in BOTH AMP states (README claims fp16; the script default for pytorch_fft mode is AMP=0).",
+  "variants": [
+    {
+      "name": "v1",
+      "module": "baseline.test_baseline_v1",
+      "mode": "pytorch_fft",
+      "env_gates": {},
+      "note": "naive eager per-tile baseline (hardcoded 256 tiles, no warmup)",
+      "n_reps": 3,
+      "reps": [
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 52.533,
+          "total_script_s": 59.094,
+          "peak_vram_mb": 12480.36,
+          "micro_ms_per_tile": null,
+          "final_loss": 20544.3934,
+          "num_tiles": 16,
+          "graph_replay": false,
+          "rep": 1,
+          "wall_s": 61.95
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 52.603,
+          "total_script_s": 59.164,
+          "peak_vram_mb": 12480.36,
+          "micro_ms_per_tile": null,
+          "final_loss": 20544.3934,
+          "num_tiles": 16,
+          "graph_replay": false,
+          "rep": 2,
+          "wall_s": 62.08
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 52.559,
+          "total_script_s": 59.116,
+          "peak_vram_mb": 12480.36,
+          "micro_ms_per_tile": null,
+          "final_loss": 20544.3934,
+          "num_tiles": 16,
+          "graph_replay": false,
+          "rep": 3,
+          "wall_s": 61.86
+        }
+      ],
+      "mean_std": {
+        "pure_pipeline_s": {
+          "mean": 52.565,
+          "std": 0.035384,
+          "n": 3
+        },
+        "peak_vram_mb": {
+          "mean": 12480.36,
+          "std": 0.0,
+          "n": 3
+        },
+        "micro_ms_per_tile": {
+          "mean": null,
+          "std": null,
+          "n": 0
+        }
+      },
+      "n_failed": 0,
+      "failed_reps": [],
+      "speedup_vs_v1": 1.0
+    },
+    {
+      "name": "v3",
+      "module": "baseline.test_baseline_v3_H2D_init",
+      "mode": "pytorch_fft",
+      "env_gates": {},
+      "note": "H2D / pinned-memory overlap",
+      "n_reps": 3,
+      "reps": [
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 13.309,
+          "total_script_s": 20.119,
+          "peak_vram_mb": 11874.16,
+          "micro_ms_per_tile": 1.884,
+          "final_loss": 380983.0703,
+          "num_tiles": 256,
+          "graph_replay": false,
+          "rep": 1,
+          "wall_s": 24.75
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 13.338,
+          "total_script_s": 19.965,
+          "peak_vram_mb": 11874.16,
+          "micro_ms_per_tile": 1.889,
+          "final_loss": 380983.0703,
+          "num_tiles": 256,
+          "graph_replay": false,
+          "rep": 2,
+          "wall_s": 24.77
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 13.33,
+          "total_script_s": 20.03,
+          "peak_vram_mb": 11874.16,
+          "micro_ms_per_tile": 1.887,
+          "final_loss": 380983.0703,
+          "num_tiles": 256,
+          "graph_replay": false,
+          "rep": 3,
+          "wall_s": 24.77
+        }
+      ],
+      "mean_std": {
+        "pure_pipeline_s": {
+          "mean": 13.325667,
+          "std": 0.014978,
+          "n": 3
+        },
+        "peak_vram_mb": {
+          "mean": 11874.16,
+          "std": 0.0,
+          "n": 3
+        },
+        "micro_ms_per_tile": {
+          "mean": 1.886667,
+          "std": 0.002517,
+          "n": 3
+        }
+      },
+      "n_failed": 0,
+      "failed_reps": [],
+      "speedup_vs_v1": 3.945
+    },
+    {
+      "name": "v5_amp_on",
+      "module": "baseline.test_baseline_v5_amp_graph",
+      "mode": "pytorch_fft",
+      "env_gates": {
+        "FUILT_USE_AMP": "1"
+      },
+      "note": "AMP fp16 + CUDA graph capture, FUILT_USE_AMP=1 (README claim)",
+      "n_reps": 3,
+      "reps": [
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 18.031,
+          "total_script_s": 19.89,
+          "peak_vram_mb": 6617.06,
+          "micro_ms_per_tile": 3.158,
+          "final_loss": 380983.0625,
+          "num_tiles": 256,
+          "graph_replay": true,
+          "rep": 1,
+          "wall_s": 25.5
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 17.875,
+          "total_script_s": 19.751,
+          "peak_vram_mb": 6617.06,
+          "micro_ms_per_tile": 3.137,
+          "final_loss": 380983.0625,
+          "num_tiles": 256,
+          "graph_replay": true,
+          "rep": 2,
+          "wall_s": 24.62
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 17.931,
+          "total_script_s": 19.826,
+          "peak_vram_mb": 6617.06,
+          "micro_ms_per_tile": 3.147,
+          "final_loss": 380983.0625,
+          "num_tiles": 256,
+          "graph_replay": true,
+          "rep": 3,
+          "wall_s": 24.77
+        }
+      ],
+      "mean_std": {
+        "pure_pipeline_s": {
+          "mean": 17.945667,
+          "std": 0.079027,
+          "n": 3
+        },
+        "peak_vram_mb": {
+          "mean": 6617.06,
+          "std": 0.0,
+          "n": 3
+        },
+        "micro_ms_per_tile": {
+          "mean": 3.147333,
+          "std": 0.010504,
+          "n": 3
+        }
+      },
+      "n_failed": 0,
+      "failed_reps": [],
+      "speedup_vs_v1": 2.929
+    },
+    {
+      "name": "v5_amp_off",
+      "module": "baseline.test_baseline_v5_amp_graph",
+      "mode": "pytorch_fft",
+      "env_gates": {},
+      "note": "v5 script default: pytorch_fft mode => FUILT_USE_AMP=0 (recorded state)",
+      "n_reps": 3,
+      "reps": [
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 17.873,
+          "total_script_s": 19.746,
+          "peak_vram_mb": 6617.06,
+          "micro_ms_per_tile": 3.139,
+          "final_loss": 380983.0625,
+          "num_tiles": 256,
+          "graph_replay": true,
+          "rep": 1,
+          "wall_s": 24.61
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 17.873,
+          "total_script_s": 19.709,
+          "peak_vram_mb": 6617.06,
+          "micro_ms_per_tile": 3.143,
+          "final_loss": 380983.0625,
+          "num_tiles": 256,
+          "graph_replay": true,
+          "rep": 2,
+          "wall_s": 24.64
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 17.829,
+          "total_script_s": 19.681,
+          "peak_vram_mb": 6617.06,
+          "micro_ms_per_tile": 3.126,
+          "final_loss": 380983.0625,
+          "num_tiles": 256,
+          "graph_replay": true,
+          "rep": 3,
+          "wall_s": 24.38
+        }
+      ],
+      "mean_std": {
+        "pure_pipeline_s": {
+          "mean": 17.858333,
+          "std": 0.025403,
+          "n": 3
+        },
+        "peak_vram_mb": {
+          "mean": 6617.06,
+          "std": 0.0,
+          "n": 3
+        },
+        "micro_ms_per_tile": {
+          "mean": 3.136,
+          "std": 0.008888,
+          "n": 3
+        }
+      },
+      "n_failed": 0,
+      "failed_reps": [],
+      "speedup_vs_v1": 2.943
+    },
+    {
+      "name": "v6",
+      "module": "baseline.test_baseline_v6_full_batch",
+      "mode": "pytorch_fft",
+      "env_gates": {},
+      "note": "full-batch CUDA graph capture",
+      "n_reps": 3,
+      "reps": [
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 19.497,
+          "total_script_s": 21.697,
+          "peak_vram_mb": 21465.06,
+          "micro_ms_per_tile": 3.463,
+          "final_loss": 380983.1875,
+          "num_tiles": 256,
+          "graph_replay": true,
+          "rep": 1,
+          "wall_s": 109.85
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 19.476,
+          "total_script_s": 22.569,
+          "peak_vram_mb": 21465.06,
+          "micro_ms_per_tile": 3.457,
+          "final_loss": 380983.1875,
+          "num_tiles": 256,
+          "graph_replay": true,
+          "rep": 2,
+          "wall_s": 109.99
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 19.583,
+          "total_script_s": 22.728,
+          "peak_vram_mb": 21465.06,
+          "micro_ms_per_tile": 3.474,
+          "final_loss": 380983.1875,
+          "num_tiles": 256,
+          "graph_replay": true,
+          "rep": 3,
+          "wall_s": 111.25
+        }
+      ],
+      "mean_std": {
+        "pure_pipeline_s": {
+          "mean": 19.518667,
+          "std": 0.056695,
+          "n": 3
+        },
+        "peak_vram_mb": {
+          "mean": 21465.06,
+          "std": 0.0,
+          "n": 3
+        },
+        "micro_ms_per_tile": {
+          "mean": 3.464667,
+          "std": 0.008622,
+          "n": 3
+        }
+      },
+      "n_failed": 0,
+      "failed_reps": [],
+      "speedup_vs_v1": 2.693
+    },
+    {
+      "name": "v7_cuda",
+      "module": "baseline.test_baseline_v7_fuselevelset",
+      "mode": "pytorch_fft",
+      "env_gates": {
+        "FUILT_USE_TRITON_POINTWISE": "0"
+      },
+      "note": "v7 fused pointwise (hand CUDA kernel)",
+      "n_reps": 3,
+      "reps": [
+        {
+          "returncode": 1,
+          "error_tail": "/home/lyj/code/GpuSpeedUpFuILT/baseline/test_baseline_v7_fuselevelset.py:632: UserWarning: Casting complex values to real discards the imaginary part (Triggered internally at /pytorch/aten/src/ATen/native/Copy.cpp:308.)\n  opt_kernels = litho._kernels[\"focus\"].kernels.to(DEVICE, dtype=torch.float32).contiguous()\nlibpng error: Write Error\nlibpng error: Write Error\nlibpng error: Write Error\nlibpng error: Write Error\nlibpng error: Write Error\nlibpng error: Write Error\nlibpng error: Write Error\nlibpng error: Write Error\nTraceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/home/lyj/code/GpuSpeedUpFuILT/baseline/test_baseline_v7_fuselevelset.py\", line 1183, in <module>\n    main()\n    ~~~~^^\n  File \"/home/lyj/code/GpuSpeedUpFuILT/baseline/test_baseline_v7_fuselevelset.py\", line 1176, in main\n    _write_profile_json(result, total_t1 - total_t0, str(result[\"mode\"]))\n    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/lyj/code/GpuSpeedUpFuILT/baseline/test_baseline_v7_fuselevelset.py\", line 1058, in _write_profile_json\n    out_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + \"\\n\", encoding=\"utf-8\")\n    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/lyj/miniconda3/lib/python3.13/pathlib/_local.py\", line 555, in write_text\n    return PathBase.write_text(self, data, encoding, errors, newline)\n           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/lyj/miniconda3/lib/python3.13/pathlib/_abc.py\", line 651, in write_text\n    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:\n         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nOSError: [Errno 28] No space left on device\n",
+          "raw": "发现 tile: 16 个，grid=4x4, s=1024, overlap=64\n[Mode] 核心梯度模式: pytorch_fft | pointwise backend: cuda\n[   1. 刚读完数据(CPU)    ] 实时占用:     0.00 MB | 历史峰值:     0.00 MB\n🔥 压测模式开启: 强制克隆为 256 个 Tiles, Grid=16x16\n🚀 启动 CPU 多线程并发计算 SDF...\n[    2. 参数刚上 GPU     ] 实时占用:  2241.05 MB | 历史峰值:  2437.06 MB\n🧩 初始化静态工作区: 画布大小 15424x15424, 正在预分配显存...\n[    3. 静态管家预分配后     ] 实时占用:  5081.05 MB | 历史峰值:  5989.05 MB\n[memory budget] OK: ~18531 MB usable headroom\n[  4. [Iter 1] 刚进循环  ] 实时占用:  5085.05 MB | 历史峰值:  5989.05 MB\n[LevelSetDBG][iter=001][tile=0] loss=401336.718750, grad_mean=3.399042e-03, grad_max=2.537277e-02\n[5. [Iter 1] LevelSet 后] 实时占用:  5093.05 MB | 历史峰值:  5989.05 MB\n[ 6. [Iter 1] Fuse 后 ] 实时占用:  5093.05 MB | 历史峰值:  5989.05 MB\n[7. [Iter 1] Split 后 ] 实时占用:  5093.05 MB | 历史峰值:  5989.05 MB\n[8. [Iter 1] Apply 后 ] 实时占用:  5093.05 MB | 历史峰值:  5989.05 MB\n[Iter 001/20] avg_loss=380983.0547\n[LevelSetDBG][iter=002][tile=0] loss=401336.718750, grad_mean=3.399023e-03, grad_max=2.537253e-02\n[Iter 002/20] avg_loss=380983.0625\n[LevelSetDBG][iter=003][tile=0] loss=401336.718750, grad_mean=3.399003e-03, grad_max=2.537232e-02\n[Iter 003/20] avg_loss=380983.0703\n[LevelSetDBG][iter=004][tile=0] loss=401336.718750, grad_mean=3.398985e-03, grad_max=2.537209e-02\n[Iter 004/20] avg_loss=380983.0781\n[LevelSetDBG][iter=005][tile=0] loss=401336.718750, grad_mean=3.398965e-03, grad_max=2.537186e-02\n[Iter 005/20] avg_loss=380983.0781\n[LevelSetDBG][iter=006][tile=0] loss=401336.718750, grad_mean=3.398945e-03, grad_max=2.537164e-02\n[Iter 006/20] avg_loss=380983.0859\n[LevelSetDBG][iter=007][tile=0] loss=401336.718750, grad_mean=3.398926e-03, grad_max=2.537142e-02\n[Iter 007/20] avg_loss=380983.0938\n[LevelSetDBG][iter=008][tile=0] loss=401336.718750, grad_mean=3.398907e-03, grad_max=2.537121e-02\n[Iter 008/20] avg_loss=380983.1016\n[LevelSetDBG][iter=009][tile=0] loss=401336.718750, grad_mean=3.398888e-03, grad_max=2.537095e-02\n[Iter 009/20] avg_loss=380983.1016\n[LevelSetDBG][iter=010][tile=0] loss=401336.718750, grad_mean=3.398868e-03, grad_max=2.537077e-02\n[  Eval前 [Iter 10]   ] 实时占用:  5093.05 MB | 历史峰值:  5989.05 MB\n[  Eval后 [Iter 10]   ] 实时占用:  5093.05 MB | 历史峰值:  5989.05 MB\n[Iter 010/20] avg_loss=380983.1094 | Eval L2=10240.00, EPE=0.00\n[LevelSetDBG][iter=011][tile=0] loss=401336.718750, grad_mean=3.398848e-03, grad_max=2.537052e-02\n[Iter 011/20] avg_loss=380983.1172\n[LevelSetDBG][iter=012][tile=0] loss=401336.718750, grad_mean=3.398829e-03, grad_max=2.537030e-02\n[Iter 012/20] avg_loss=380983.1250\n[LevelSetDBG][iter=013][tile=0] loss=401336.718750, grad_mean=3.398809e-03, grad_max=2.537008e-02\n[Iter 013/20] avg_loss=380983.1250\n[LevelSetDBG][iter=014][tile=0] loss=401336.718750, grad_mean=3.398790e-03, grad_max=2.536987e-02\n[Iter 014/20] avg_loss=380983.1328\n[LevelSetDBG][iter=015][tile=0] loss=401336.718750, grad_mean=3.398770e-03, grad_max=2.536963e-02\n[Iter 015/20] avg_loss=380983.1426\n[LevelSetDBG][iter=016][tile=0] loss=401336.718750, grad_mean=3.398750e-03, grad_max=2.536942e-02\n[Iter 016/20] avg_loss=380983.1504\n[LevelSetDBG][iter=017][tile=0] loss=401336.718750, grad_mean=3.398732e-03, grad_max=2.536920e-02\n[Iter 017/20] avg_loss=380983.1582\n[LevelSetDBG][iter=018][tile=0] loss=401336.718750, grad_mean=3.398712e-03, grad_max=2.536898e-02\n[Iter 018/20] avg_loss=380983.1641\n[LevelSetDBG][iter=019][tile=0] loss=401336.718750, grad_mean=3.398692e-03, grad_max=2.536873e-02\n[Iter 019/20] avg_loss=380983.1641\n[LevelSetDBG][iter=020][tile=0] loss=401336.718750, grad_mean=3.398673e-03, grad_max=2.536855e-02\n[  Eval前 [Iter 20]   ] 实时占用:  5093.05 MB | 历史峰值:  5989.05 MB\n[  Eval后 [Iter 20]   ] 实时占用:  5093.05 MB | 历史峰值:  5989.05 MB\n[Iter 020/20] avg_loss=380983.1797 | Eval L2=10240.00, EPE=0.00\n[    9. 准备生成最终大图前    ] 实时占用:  5093.05 MB | 历史峰值:  5989.05 MB\n[    10. 最终大图生成后     ] 实时占用:  5093.05 MB | 历史峰值:  5989.05 MB\n⏳ 触发后台异步写盘队列...\n\n==================================================\n🚀 Baseline Profiling Report (基线性能分析报告)\n==================================================\n📌 Mode: pytorch_fft | Tile 规格: 256 个 (16x16), 大小 1024x1024\n🔥 峰值显存 (Peak VRAM): 5989.05 MB\n--------------------------------------------------\n阶段 (Pipeline Stage)       | 耗时 (s)     | 占比 (%)\n--------------------------------------------------\n1. IO_Raster              |    0.018 s |   0.2 %\n2. H2D_Init               |    0.962 s |  10.6 %\n3.1 LevelSet              |    6.816 s |  74.9 %\n3.2 Fuse                  |    0.064 s |   0.7 %\n3.3 Split                 |    0.050 s |   0.6 %\n3.4 Apply                 |    0.082 s |   0.9 %\n4. D2H_Save               |    1.105 s |  12.1 %\n--------------------------------------------------\n💡 流水线总纯耗时 (剔除Eval): 9.098 s\n⏱️ 脚本端到端总耗时 (含Eval): 15.909 s\n--------------------------------------------------\n🔬 核心算子精确耗时 (Micro-Bench): 1.331 ms / Tile\n   (注: 这代表去除了 Python 调度开销后，纯 GPU 的极限速度)\n==================================================\n\n\n/home/lyj/code/GpuSpeedUpFuILT/baseline/test_baseline_v7_fuselevelset.py:632: UserWarning: Casting complex values to real discards the imaginary part (Triggered internally at /pytorch/aten/src/ATen/native/Copy.cpp:308.)\n  opt_kernels = litho._kernels[\"focus\"].kernels.to(DEVICE, dtype=torch.float32).contiguous()\nlibpng error: Write Error\nlibpng error: Write Error\nlibpng error: Write Error\nlibpng error: Write Error\nlibpng error: Write Error\nlibpng error: Write Error\nlibpng error: Write Error\nlibpng error: Write Error\nTraceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/home/lyj/code/GpuSpeedUpFuILT/baseline/test_baseline_v7_fuselevelset.py\", line 1183, in <module>\n    main()\n    ~~~~^^\n  File \"/home/lyj/code/GpuSpeedUpFuILT/baseline/test_baseline_v7_fuselevelset.py\", line 1176, in main\n    _write_profile_json(result, total_t1 - total_t0, str(result[\"mode\"]))\n    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/lyj/code/GpuSpeedUpFuILT/baseline/test_baseline_v7_fuselevelset.py\", line 1058, in _write_profile_json\n    out_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + \"\\n\", encoding=\"utf-8\")\n    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/lyj/miniconda3/lib/python3.13/pathlib/_local.py\", line 555, in write_text\n    return PathBase.write_text(self, data, encoding, errors, newline)\n           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/lyj/miniconda3/lib/python3.13/pathlib/_abc.py\", line 651, in write_text\n    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:\n         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nOSError: [Errno 28] No space left on device\n",
+          "rep": 1,
+          "wall_s": 24.37
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 8.987,
+          "total_script_s": 15.831,
+          "peak_vram_mb": 5989.05,
+          "micro_ms_per_tile": 1.336,
+          "final_loss": 380983.1797,
+          "num_tiles": 256,
+          "graph_replay": false,
+          "rep": 2,
+          "wall_s": 20.97
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 8.863,
+          "total_script_s": 15.585,
+          "peak_vram_mb": 5989.05,
+          "micro_ms_per_tile": 1.316,
+          "final_loss": 380983.1797,
+          "num_tiles": 256,
+          "graph_replay": false,
+          "rep": 3,
+          "wall_s": 20.54
+        }
+      ],
+      "mean_std": {
+        "pure_pipeline_s": {
+          "mean": 8.925,
+          "std": 0.087681,
+          "n": 2
+        },
+        "peak_vram_mb": {
+          "mean": 5989.05,
+          "std": 0.0,
+          "n": 2
+        },
+        "micro_ms_per_tile": {
+          "mean": 1.326,
+          "std": 0.014142,
+          "n": 2
+        }
+      },
+      "n_failed": 1,
+      "failed_reps": [
+        1
+      ],
+      "speedup_vs_v1": 5.89
+    },
+    {
+      "name": "v7_triton",
+      "module": "baseline.test_baseline_v7_fuselevelset",
+      "mode": "pytorch_fft",
+      "env_gates": {
+        "FUILT_USE_TRITON_POINTWISE": "1"
+      },
+      "note": "v7 fused pointwise (Triton port)",
+      "n_reps": 3,
+      "reps": [
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 9.186,
+          "total_script_s": 16.289,
+          "peak_vram_mb": 5989.05,
+          "micro_ms_per_tile": 1.349,
+          "final_loss": 380983.1797,
+          "num_tiles": 256,
+          "graph_replay": false,
+          "rep": 1,
+          "wall_s": 21.39
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 9.192,
+          "total_script_s": 16.429,
+          "peak_vram_mb": 5989.05,
+          "micro_ms_per_tile": 1.38,
+          "final_loss": 380983.1797,
+          "num_tiles": 256,
+          "graph_replay": false,
+          "rep": 2,
+          "wall_s": 21.48
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 9.081,
+          "total_script_s": 16.287,
+          "peak_vram_mb": 5989.05,
+          "micro_ms_per_tile": 1.355,
+          "final_loss": 380983.1797,
+          "num_tiles": 256,
+          "graph_replay": false,
+          "rep": 3,
+          "wall_s": 21.15
+        }
+      ],
+      "mean_std": {
+        "pure_pipeline_s": {
+          "mean": 9.153,
+          "std": 0.062426,
+          "n": 3
+        },
+        "peak_vram_mb": {
+          "mean": 5989.05,
+          "std": 0.0,
+          "n": 3
+        },
+        "micro_ms_per_tile": {
+          "mean": 1.361333,
+          "std": 0.016442,
+          "n": 3
+        }
+      },
+      "n_failed": 0,
+      "failed_reps": [],
+      "speedup_vs_v1": 5.743
+    },
+    {
+      "name": "p01",
+      "module": "baseline.test_baseline_v7_fuselevelset",
+      "mode": "pytorch_fft",
+      "env_gates": {
+        "FUILT_USE_COMBINED_KERNEL": "1"
+      },
+      "note": "v7 + P0.1 combined-kernel FFT (24 ifft2 -> 1)",
+      "n_reps": 3,
+      "reps": [
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 2.771,
+          "total_script_s": 9.592,
+          "peak_vram_mb": 5997.05,
+          "micro_ms_per_tile": 0.121,
+          "final_loss": 380983.1797,
+          "num_tiles": 256,
+          "graph_replay": false,
+          "rep": 1,
+          "wall_s": 14.43
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 2.769,
+          "total_script_s": 9.539,
+          "peak_vram_mb": 5997.05,
+          "micro_ms_per_tile": 0.124,
+          "final_loss": 380983.1797,
+          "num_tiles": 256,
+          "graph_replay": false,
+          "rep": 2,
+          "wall_s": 14.43
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 2.712,
+          "total_script_s": 9.517,
+          "peak_vram_mb": 5997.05,
+          "micro_ms_per_tile": 0.111,
+          "final_loss": 380983.1797,
+          "num_tiles": 256,
+          "graph_replay": false,
+          "rep": 3,
+          "wall_s": 14.45
+        }
+      ],
+      "mean_std": {
+        "pure_pipeline_s": {
+          "mean": 2.750667,
+          "std": 0.033501,
+          "n": 3
+        },
+        "peak_vram_mb": {
+          "mean": 5997.05,
+          "std": 0.0,
+          "n": 3
+        },
+        "micro_ms_per_tile": {
+          "mean": 0.118667,
+          "std": 0.006807,
+          "n": 3
+        }
+      },
+      "n_failed": 0,
+      "failed_reps": [],
+      "speedup_vs_v1": 19.11
+    },
+    {
+      "name": "p01p03",
+      "module": "baseline.test_baseline_v7_fuselevelset",
+      "mode": "pytorch_fft",
+      "env_gates": {
+        "FUILT_USE_COMBINED_KERNEL": "1",
+        "FUILT_USE_ASYNC_D2H": "1"
+      },
+      "note": "v7 + P0.1 + P0.3 async D2H overlap (headline 22.8x)",
+      "n_reps": 3,
+      "reps": [
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 2.454,
+          "total_script_s": 9.211,
+          "peak_vram_mb": 5997.05,
+          "micro_ms_per_tile": 0.12,
+          "final_loss": 380983.1797,
+          "num_tiles": 256,
+          "graph_replay": false,
+          "rep": 1,
+          "wall_s": 14.49
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 2.443,
+          "total_script_s": 9.198,
+          "peak_vram_mb": 5997.05,
+          "micro_ms_per_tile": 0.12,
+          "final_loss": 380983.1797,
+          "num_tiles": 256,
+          "graph_replay": false,
+          "rep": 2,
+          "wall_s": 14.76
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 2.435,
+          "total_script_s": 9.203,
+          "peak_vram_mb": 5997.05,
+          "micro_ms_per_tile": 0.12,
+          "final_loss": 380983.1797,
+          "num_tiles": 256,
+          "graph_replay": false,
+          "rep": 3,
+          "wall_s": 14.45
+        }
+      ],
+      "mean_std": {
+        "pure_pipeline_s": {
+          "mean": 2.444,
+          "std": 0.009539,
+          "n": 3
+        },
+        "peak_vram_mb": {
+          "mean": 5997.05,
+          "std": 0.0,
+          "n": 3
+        },
+        "micro_ms_per_tile": {
+          "mean": 0.12,
+          "std": 0.0,
+          "n": 3
+        }
+      },
+      "n_failed": 0,
+      "failed_reps": [],
+      "speedup_vs_v1": 21.508
+    },
+    {
+      "name": "p04",
+      "module": "baseline.test_baseline_v7_fuselevelset",
+      "mode": "pytorch_fft",
+      "env_gates": {
+        "FUILT_USE_COMBINED_KERNEL": "1",
+        "FUILT_USE_ASYNC_D2H": "1",
+        "FUILT_USE_BATCH_H2D": "1"
+      },
+      "note": "v7 + P0.1 + P0.3 + P0.4 batch H2D (regressed — kept as cautionary tale)",
+      "n_reps": 3,
+      "reps": [
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 4.413,
+          "total_script_s": 11.337,
+          "peak_vram_mb": 5997.05,
+          "micro_ms_per_tile": 0.12,
+          "final_loss": 380983.1797,
+          "num_tiles": 256,
+          "graph_replay": false,
+          "rep": 1,
+          "wall_s": 17.16
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 4.36,
+          "total_script_s": 11.21,
+          "peak_vram_mb": 5997.05,
+          "micro_ms_per_tile": 0.12,
+          "final_loss": 380983.1797,
+          "num_tiles": 256,
+          "graph_replay": false,
+          "rep": 2,
+          "wall_s": 16.62
+        },
+        {
+          "returncode": 0,
+          "pure_pipeline_s": 4.232,
+          "total_script_s": 11.017,
+          "peak_vram_mb": 5997.05,
+          "micro_ms_per_tile": 0.112,
+          "final_loss": 380983.1797,
+          "num_tiles": 256,
+          "graph_replay": false,
+          "rep": 3,
+          "wall_s": 16.37
+        }
+      ],
+      "mean_std": {
+        "pure_pipeline_s": {
+          "mean": 4.335,
+          "std": 0.093054,
+          "n": 3
+        },
+        "peak_vram_mb": {
+          "mean": 5997.05,
+          "std": 0.0,
+          "n": 3
+        },
+        "micro_ms_per_tile": {
+          "mean": 0.117333,
+          "std": 0.004619,
+          "n": 3
+        }
+      },
+      "n_failed": 0,
+      "failed_reps": [],
+      "speedup_vs_v1": 12.126
+    }
+  ]
+}
